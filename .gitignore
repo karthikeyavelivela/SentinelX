@@ -1,0 +1,51 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+
+# =========================
+# Virtual Environment
+# =========================
+venv/
+.env
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs & Output
+# =========================
+output/
+reports/
+*.log
+
+# =========================
+# Scan Artifacts (Generated)
+# =========================
+assets.json
+endpoints.json
+vulnerabilities.json
+risk_report.html
+risk_report.pdf
+
+# =========================
+# Temporary / Testing
+# =========================
+temp/
+tmp/
