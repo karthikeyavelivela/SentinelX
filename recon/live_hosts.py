@@ -1,27 +1,36 @@
-import aiohttp
 import asyncio
+import aiohttp
 import logging
 
 logger = logging.getLogger("SentinelX")
 
-async def check_host(session, url):
+
+async def check_host(session, host):
     try:
-        async with session.get(url, timeout=5) as r:
-            return url
+        async with session.get(
+            host,
+            timeout=aiohttp.ClientTimeout(total=8),
+            ssl=False
+        ) as resp:
+            if resp.status < 600:
+                return host
     except:
-        return None
+        pass
+    return None
 
 
-async def find_live_hosts(subdomains):
-    logger.info("Checking live hosts")
-
+async def find_live_hosts(hosts):
     alive = []
-    async with aiohttp.ClientSession() as session:
+
+    timeout = aiohttp.ClientTimeout(total=10)
+
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         tasks = []
 
-        for sub in subdomains:
-            tasks.append(check_host(session, f"https://{sub}"))
-            tasks.append(check_host(session, f"http://{sub}"))
+        for host in hosts:
+            if not host.startswith("http"):
+                host = "https://" + host
+            tasks.append(check_host(session, host))
 
         results = await asyncio.gather(*tasks)
 
@@ -29,7 +38,5 @@ async def find_live_hosts(subdomains):
             if r:
                 alive.append(r)
 
-    alive = list(set(alive))
     logger.info(f"Live hosts found: {len(alive)}")
-
     return alive

@@ -3,7 +3,7 @@ from rich.console import Console
 console = Console()
 
 def show_banner():
-    banner = r"""
+    banner = """
 ███████╗███████╗███╗   ██╗████████╗██╗███╗   ██╗███████╗██╗     ██╗  ██╗
 ██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║████╗  ██║██╔════╝██║     ╚██╗██╔╝
 ███████╗█████╗  ██╔██╗ ██║   ██║   ██║██╔██╗ ██║█████╗  ██║      ╚███╔╝ 
@@ -14,7 +14,5 @@ def show_banner():
     """
 
     console.print(banner, style="bold red")
-    console.print(
-        "Version 1.0  |  Automated Web & Cloud Security Intelligence\n",
-        style="bold cyan"
-    )
+    console.print("SentinelX v1.0  |  Attack Surface Intelligence Platform\n",
+                  style="bold cyan")

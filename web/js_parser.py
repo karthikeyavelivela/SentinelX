@@ -4,9 +4,16 @@ import logging
 
 logger = logging.getLogger("SentinelX")
 
+# Very tolerant regex for modern frameworks
 API_REGEX = re.compile(
-    r"""(?:"|')((?:/api|/v1|/v2|/v3)[^"' ]+)""",
-    re.IGNORECASE
+    r"""
+    ["'](
+        \/
+        (?:api|rest|v1|v2|v3|auth|user|admin|graphql)
+        [^"'\\\s]{1,200}
+    )["']
+    """,
+    re.VERBOSE | re.IGNORECASE
 )
 
 
@@ -14,13 +21,28 @@ def extract_js_endpoints(js_url):
     endpoints = set()
 
     try:
-        resp = requests.get(js_url, timeout=10)
-        matches = API_REGEX.findall(resp.text)
+        r = requests.get(
+            js_url,
+            timeout=10,
+            headers={
+                "User-Agent": "SentinelX",
+                "Accept": "*/*"
+            }
+        )
+
+        if r.status_code != 200:
+            return []
+
+        # prevent freezing on large bundles
+        content = r.text[:2_000_000]
+
+        matches = API_REGEX.findall(content)
 
         for m in matches:
-            endpoints.add(m)
+            if m.startswith("/"):
+                endpoints.add(m)
 
     except Exception:
-        pass
+        logger.debug(f"JS parse failed: {js_url}")
 
     return list(endpoints)

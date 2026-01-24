@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SentinelX Security Report</title>
+    <style>
+        body { font-family: Arial; background:#0e1117; color:#e6edf3; }
+        h1,h2 { color:#58a6ff; }
+        table { width:100%; border-collapse: collapse; margin-top:20px; }
+        th,td { padding:10px; border:1px solid #30363d; }
+        th { background:#161b22; }
+        .critical { color:#ff4d4d; }
+        .high { color:#ff944d; }
+        .medium { color:#ffd24d; }
+        .low { color:#7ee787; }
+    </style>
+</head>
+<body>
+
+<h1>SentinelX Security Assessment Report</h1>
+
+<p><b>Target:</b> {{ target }}</p>
+<p><b>Date:</b> {{ date }}</p>
+
+<hr>
+
+<h2>Executive Summary</h2>
+
+<ul>
+    <li>Assets Discovered: {{ assets|length }}</li>
+    <li>Endpoints Identified: {{ endpoints|length }}</li>
+    <li>Total Vulnerabilities: {{ findings|length }}</li>
+</ul>
+
+<h3>Severity Breakdown</h3>
+<ul>
+    <li class="critical">Critical: {{ severity.Critical }}</li>
+    <li class="high">High: {{ severity.High }}</li>
+    <li class="medium">Medium: {{ severity.Medium }}</li>
+    <li class="low">Low: {{ severity.Low }}</li>
+</ul>
+
+<hr>
+
+<h2>Discovered Assets</h2>
+<table>
+<tr><th>Host</th><th>Ports</th><th>Technologies</th></tr>
+{% for a in assets %}
+<tr>
+<td>{{ a.host }}</td>
+<td>{{ a.ports }}</td>
+<td>{{ a.technologies }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<hr>
+
+<h2>Vulnerability Findings</h2>
+
+<table>
+<tr>
+<th>Type</th>
+<th>Endpoint</th>
+<th>Severity</th>
+<th>CVSS</th>
+<th>Business Impact</th>
+</tr>
+
+{% for f in findings %}
+<tr>
+<td>{{ f.type }}</td>
+<td>{{ f.endpoint }}</td>
+<td class="{{ f.severity|lower }}">{{ f.severity }}</td>
+<td>{{ f.cvss }}</td>
+<td>{{ f.business_impact }}</td>
+</tr>
+{% endfor %}
+</table>
+
+</body>
+</html>

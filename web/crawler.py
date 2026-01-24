@@ -7,15 +7,11 @@ logger = logging.getLogger("SentinelX")
 
 
 def crawl_site(base_url, max_pages=30):
-    """
-    Crawl website and extract internal URLs
-    """
-
-    logger.info(f"Crawling website: {base_url}")
-
     visited = set()
     to_visit = [base_url]
+
     endpoints = set()
+    js_files = set()
 
     domain = urlparse(base_url).netloc
 
@@ -28,23 +24,33 @@ def crawl_site(base_url, max_pages=30):
         visited.add(url)
 
         try:
-            response = requests.get(url, timeout=10)
-            soup = BeautifulSoup(response.text, "html.parser")
+            r = requests.get(url, timeout=10)
+            soup = BeautifulSoup(r.text, "html.parser")
 
+            # ---------------------------
+            # Internal links
+            # ---------------------------
             for tag in soup.find_all(["a", "form"]):
                 link = tag.get("href") or tag.get("action")
+
                 if not link:
                     continue
 
-                full_url = urljoin(base_url, link)
-                parsed = urlparse(full_url)
+                full = urljoin(base_url, link)
 
-                if parsed.netloc == domain:
-                    endpoints.add(parsed.path)
-                    to_visit.append(full_url)
+                if urlparse(full).netloc == domain:
+                    endpoints.add(urlparse(full).path)
+                    to_visit.append(full)
 
-        except Exception:
-            continue
+            # ---------------------------
+            # JS files
+            # ---------------------------
+            for script in soup.find_all("script"):
+                src = script.get("src")
+                if src:
+                    js_files.add(urljoin(base_url, src))
 
-    logger.info(f"Crawler discovered {len(endpoints)} endpoints")
-    return list(endpoints)
+        except Exception as e:
+            logger.debug(f"Crawl error: {url}")
+
+    return list(endpoints), list(js_files)
