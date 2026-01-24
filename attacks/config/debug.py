@@ -1,4 +1,5 @@
 import requests
+from auth.session import AUTH_HEADERS
 
 DEBUG_SIGNS = [
     "traceback",
@@ -16,8 +17,8 @@ def test_debug_pages(url):
     try:
         r = requests.get(
             url,
-            timeout=8,
-            headers={"User-Agent": "SentinelX"}
+            headers=AUTH_HEADERS,
+            timeout=10
         )
 
         body = r.text.lower()

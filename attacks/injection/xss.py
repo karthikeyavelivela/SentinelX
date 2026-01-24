@@ -1,4 +1,7 @@
 import requests
+from auth.session import AUTH_HEADERS
+
+XSS_PAYLOAD = "<svg/onload=alert(1)>"
 
 
 def test_xss(url):
@@ -7,23 +10,21 @@ def test_xss(url):
     if "?" not in url:
         return findings
 
-    marker = "sentinelx_xss_test"
-
-    test_url = url.replace("=", f"={marker}")
+    test_url = url.replace("=", f"={XSS_PAYLOAD}")
 
     try:
         r = requests.get(
             test_url,
-            timeout=8,
-            headers={"User-Agent": "SentinelX"}
+            headers=AUTH_HEADERS,
+            timeout=10
         )
 
-        if marker in r.text:
+        if "<svg" in r.text.lower():
             findings.append({
                 "phase": 4,
                 "type": "Reflected XSS (possible)",
                 "url": test_url,
-                "evidence": "Input reflected in response",
+                "evidence": "Payload reflected in response",
                 "severity": "Medium"
             })
 

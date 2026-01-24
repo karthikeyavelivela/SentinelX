@@ -1,42 +1,31 @@
 import requests
-import logging
-
-logger = logging.getLogger("SentinelX")
 
 METHODS = ["PUT", "DELETE", "PATCH"]
 
 
 def test_http_methods(url):
-    """
-    Tests dangerous HTTP methods on endpoints.
-    """
-
     findings = []
 
-    for method in METHODS:
+    for m in METHODS:
         try:
             r = requests.request(
-                method,
+                m,
                 url,
                 timeout=8,
-                headers={"User-Agent": "SentinelX"},
-                allow_redirects=False
+                headers={"User-Agent": "SentinelX"}
             )
 
-            # Secure behavior
-            if r.status_code in [401, 403, 405]:
-                continue
+            if r.status_code not in [401, 403, 405]:
+                findings.append({
+                    "phase": 3,
+                    "type": "Insecure HTTP Method",
+                    "url": url,
+                    "method": m,
+                    "status": r.status_code,
+                    "severity": "Medium"
+                })
 
-            # Unexpected acceptance
-            findings.append({
-                "type": "Insecure HTTP Method",
-                "url": url,
-                "method": method,
-                "status": r.status_code,
-                "severity": "Medium"
-            })
-
-        except Exception:
-            continue
+        except:
+            pass
 
     return findings

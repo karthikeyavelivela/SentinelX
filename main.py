@@ -1,5 +1,8 @@
 import argparse
 import asyncio
+import time
+
+from utils.progress import PhaseProgress
 
 from utils.banner import show_banner
 from core.logger import setup_logger
@@ -50,6 +53,11 @@ from utils.helpers import save_json
 
 
 def main():
+    # ======================================
+    # GLOBAL TIMER
+    # ======================================
+    scan_start_time = time.time()
+
     # ==========================
     # Startup
     # ==========================
@@ -107,6 +115,11 @@ def main():
 
     logger.info("PHASE 2 - Web & API Enumeration")
 
+    phase2_bar = PhaseProgress(
+        "PHASE 2 - Endpoint Enumeration",
+        total=len(assets)
+    )
+
     all_endpoints = []
 
     for asset in assets:
@@ -125,7 +138,9 @@ def main():
         )
 
         all_endpoints.extend(mapped)
+        phase2_bar.update()
 
+    phase2_bar.close()
     save_json(all_endpoints, "endpoints.json")
 
     # ==================================================
@@ -134,16 +149,38 @@ def main():
 
     logger.info("PHASE 3 - Access Control Vulnerabilities")
 
-    phase3 = run_vulnerability_checks(all_endpoints)
+    phase3_bar = PhaseProgress(
+        "PHASE 3 - Access Control",
+        total=len(all_endpoints)
+    )
+
+    phase3 = []
+
+    for ep in all_endpoints:
+        phase3.extend(run_vulnerability_checks([ep]))
+        phase3_bar.update()
+
+    phase3_bar.close()
     save_json(phase3, "phase3_access_control.json")
 
     # ==================================================
-    # PHASE 4 — INJECTION TESTING
+    # PHASE 4 — INJECTION
     # ==================================================
 
     logger.info("PHASE 4 - Injection Vulnerabilities")
 
-    phase4 = run_injection_tests(all_endpoints)
+    phase4_bar = PhaseProgress(
+        "PHASE 4 - Injection Testing",
+        total=len(all_endpoints)
+    )
+
+    phase4 = []
+
+    for ep in all_endpoints:
+        phase4.extend(run_injection_tests([ep]))
+        phase4_bar.update()
+
+    phase4_bar.close()
     save_json(phase4, "phase4_injection.json")
 
     # ==================================================
@@ -152,7 +189,18 @@ def main():
 
     logger.info("PHASE 5 - Security Misconfiguration")
 
-    phase5 = run_config_tests(all_endpoints)
+    phase5_bar = PhaseProgress(
+        "PHASE 5 - Misconfiguration",
+        total=len(all_endpoints)
+    )
+
+    phase5 = []
+
+    for ep in all_endpoints:
+        phase5.extend(run_config_tests([ep]))
+        phase5_bar.update()
+
+    phase5_bar.close()
     save_json(phase5, "phase5_misconfiguration.json")
 
     # ==================================================
@@ -184,8 +232,13 @@ def main():
         findings=scored_findings
     )
 
+    total_time = time.time() - scan_start_time
+
     logger.info(f"Report generated successfully - {report_path}")
-    logger.info("SentinelX scan completed successfully")
+    logger.info(
+        f"Total scan completed in "
+        f"{int(total_time // 60)}m {int(total_time % 60)}s"
+    )
 
 
 if __name__ == "__main__":

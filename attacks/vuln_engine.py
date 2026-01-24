@@ -23,6 +23,6 @@ def run_vulnerability_checks(endpoints):
             findings.extend(test_http_methods(url))
 
         except Exception as e:
-            logger.debug(f"Phase 3 failed on {url}: {e}")
+            logger.debug(f"Phase 3 error {url}: {e}")
 
     return findings

@@ -3,3 +3,5 @@ requests
 rich
 python-dotenv
 jinja2
+reportlab
+jinja2

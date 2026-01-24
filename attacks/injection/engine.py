@@ -8,6 +8,7 @@ def run_injection_tests(endpoints):
 
     for ep in endpoints:
         url = ep.get("url")
+
         if not url:
             continue
 

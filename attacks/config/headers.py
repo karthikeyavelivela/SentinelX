@@ -1,4 +1,5 @@
 import requests
+from auth.session import AUTH_HEADERS
 
 SECURITY_HEADERS = [
     "Content-Security-Policy",
@@ -15,15 +16,14 @@ def test_security_headers(host):
     try:
         r = requests.get(
             host,
-            timeout=8,
-            headers={"User-Agent": "SentinelX"}
+            headers=AUTH_HEADERS,
+            timeout=10
         )
 
-        missing = []
-
-        for header in SECURITY_HEADERS:
-            if header not in r.headers:
-                missing.append(header)
+        missing = [
+            h for h in SECURITY_HEADERS
+            if h not in r.headers
+        ]
 
         if missing:
             findings.append({

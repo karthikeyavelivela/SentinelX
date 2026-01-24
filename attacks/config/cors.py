@@ -1,16 +1,21 @@
 import requests
+from auth.session import AUTH_HEADERS
 
 
 def test_cors(host):
     findings = []
 
     headers = {
-        "Origin": "https://evil.com",
-        "User-Agent": "SentinelX"
+        **AUTH_HEADERS,
+        "Origin": "https://evil.com"
     }
 
     try:
-        r = requests.get(host, headers=headers, timeout=8)
+        r = requests.get(
+            host,
+            headers=headers,
+            timeout=10
+        )
 
         acao = r.headers.get("Access-Control-Allow-Origin", "")
         acc = r.headers.get("Access-Control-Allow-Credentials", "")
@@ -20,7 +25,7 @@ def test_cors(host):
                 "phase": 5,
                 "type": "CORS Misconfiguration",
                 "url": host,
-                "evidence": "Wildcard origin with credentials",
+                "evidence": "Wildcard ACAO with credentials",
                 "severity": "High"
             })
 
@@ -29,7 +34,7 @@ def test_cors(host):
                 "phase": 5,
                 "type": "CORS Misconfiguration",
                 "url": host,
-                "evidence": "Origin reflected in ACAO header",
+                "evidence": "Origin reflection",
                 "severity": "High"
             })
 

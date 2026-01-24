@@ -1,25 +1,32 @@
 import requests
-import logging
-
-logger = logging.getLogger("SentinelX")
 
 
-def test_auth_bypass(endpoint, host):
+def test_auth_bypass(url):
     findings = []
 
-    url = host + endpoint
-
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(
+            url,
+            timeout=8,
+            headers={"User-Agent": "SentinelX"}
+        )
 
-        if r.status_code == 200:
+        body = r.text.lower()
+
+        if (
+            r.status_code == 200
+            and "unauthorized" not in body
+            and "forbidden" not in body
+        ):
             findings.append({
+                "phase": 3,
                 "type": "Missing Authentication",
-                "endpoint": endpoint,
-                "evidence": "Accessible without credentials"
+                "url": url,
+                "evidence": "Accessible without authentication",
+                "severity": "High"
             })
 
-    except Exception:
+    except:
         pass
 
     return findings
