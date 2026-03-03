@@ -42,3 +42,8 @@ def test_cors(host):
         pass
 
     return findings
+
+
+
+
+

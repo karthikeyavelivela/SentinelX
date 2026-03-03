@@ -54,3 +54,8 @@ def test_sqli(url):
             pass
 
     return findings
+
+
+
+
+

@@ -17,3 +17,8 @@ def run_injection_tests(endpoints):
         findings.extend(test_open_redirect(url))
 
     return findings
+
+
+
+
+

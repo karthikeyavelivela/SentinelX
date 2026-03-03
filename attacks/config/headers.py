@@ -38,3 +38,8 @@ def test_security_headers(host):
         pass
 
     return findings
+
+
+
+
+

@@ -26,3 +26,8 @@ def run_vulnerability_checks(endpoints):
             logger.debug(f"Phase 3 error {url}: {e}")
 
     return findings
+
+
+
+
+

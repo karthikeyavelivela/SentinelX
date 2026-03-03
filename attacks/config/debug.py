@@ -38,3 +38,8 @@ def test_debug_pages(url):
         pass
 
     return findings
+
+
+
+
+

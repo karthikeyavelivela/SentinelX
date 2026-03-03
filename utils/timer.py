@@ -61,3 +61,8 @@ class ScanTimer:
 
 # Global timer instance
 scan_timer = ScanTimer()
+
+
+
+
+

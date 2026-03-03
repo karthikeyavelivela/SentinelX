@@ -21,3 +21,8 @@ def run_config_tests(endpoints):
         findings.extend(test_debug_pages(url))
 
     return findings
+
+
+
+
+

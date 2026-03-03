@@ -64,3 +64,8 @@ def extract_params(endpoint):
         params.append("id")
 
     return list(set(params))
+
+
+
+
+

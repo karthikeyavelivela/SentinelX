@@ -32,3 +32,8 @@ def test_xss(url):
         pass
 
     return findings
+
+
+
+
+
