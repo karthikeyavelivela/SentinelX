@@ -1,138 +1,1067 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SentinelX Exposure Report</title>
+  <title>SentinelX Exposure Report — {{ domain }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* ===== DESIGN TOKENS ===== */
     :root {
-      --bg: #f4f6f8;
+      --brand: #0f172a;
+      --brand-light: #1e293b;
+      --accent: #3b82f6;
+      --accent-muted: #dbeafe;
+      --bg: #f8fafc;
       --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --header: #111827;
-      --line: #e5e7eb;
-      --high: #b91c1c;
-      --medium: #b45309;
-      --low: #166534;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --high: #dc2626;
+      --high-bg: #fef2f2;
+      --high-border: #fecaca;
+      --medium: #d97706;
+      --medium-bg: #fffbeb;
+      --medium-border: #fde68a;
+      --low: #16a34a;
+      --low-bg: #f0fdf4;
+      --low-border: #bbf7d0;
+      --score-low: #16a34a;
+      --score-medium: #d97706;
+      --score-high: #dc2626;
     }
-    * { box-sizing: border-box; }
-    body {
+
+    /* ===== RESET & BASE ===== */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
       background: var(--bg);
       color: var(--text);
-      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
     }
-    .header {
-      background: var(--header);
+
+    /* ===== HEADER ===== */
+    .page-header {
+      background: var(--brand);
       color: #fff;
-      padding: 24px;
+      padding: 0;
+      border-bottom: 3px solid var(--accent);
     }
-    .header h1 { margin: 0 0 8px; font-size: 24px; }
-    .header p { margin: 0; color: #d1d5db; }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 32px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-logo {
+      width: 44px;
+      height: 44px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: #fff;
+    }
+
+    .header-title h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .header-meta {
+      text-align: right;
+    }
+
+    .header-meta .domain-tag {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+    }
+
+    .header-meta .report-date {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    /* ===== LAYOUT ===== */
     .container {
-      max-width: 1000px;
-      margin: 24px auto;
-      padding: 0 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 32px 64px;
     }
+
+    /* ===== CARDS ===== */
     .card {
       background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      margin-bottom: 16px;
-      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
     }
-    h2 { margin-top: 0; font-size: 20px; }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      color: #fff;
-      font-weight: 600;
-      font-size: 13px;
-      text-transform: uppercase;
+
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .badge.high { background: var(--high); }
-    .badge.medium { background: var(--medium); }
-    .badge.low { background: var(--low); }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+
+    .card-header h2 {
       font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
     }
-    th, td {
-      border: 1px solid var(--line);
-      padding: 10px;
-      text-align: left;
-      vertical-align: top;
+
+    .card-body {
+      padding: 24px;
     }
-    th { background: #f9fafb; }
-    .muted { color: var(--muted); font-size: 13px; }
-    ul { margin: 0; padding-left: 20px; }
-    li { margin-bottom: 8px; }
+
+    /* ===== EXPOSURE SCORE ===== */
+    .score-section {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .score-dial {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 4px solid transparent;
+      position: relative;
+    }
+
+    .score-dial.level-low {
+      background: var(--low-bg);
+      border-color: var(--score-low);
+      box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.08);
+    }
+
+    .score-dial.level-medium {
+      background: var(--medium-bg);
+      border-color: var(--score-medium);
+      box-shadow: 0 0 0 6px rgba(217, 119, 6, 0.08);
+    }
+
+    .score-dial.level-high {
+      background: var(--high-bg);
+      border-color: var(--score-high);
+      box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.08);
+    }
+
+    .score-number {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .score-dial.level-low .score-number {
+      color: var(--score-low);
+    }
+
+    .score-dial.level-medium .score-number {
+      color: var(--score-medium);
+    }
+
+    .score-dial.level-high .score-number {
+      color: var(--score-high);
+    }
+
+    .score-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    .score-dial.level-low .score-label {
+      color: var(--score-low);
+    }
+
+    .score-dial.level-medium .score-label {
+      color: var(--score-medium);
+    }
+
+    .score-dial.level-high .score-label {
+      color: var(--score-high);
+    }
+
+    .score-info h3 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .score-info p {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 560px;
+    }
+
+    .score-bar-container {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+
+    .score-bar-fill.level-low {
+      background: var(--score-low);
+    }
+
+    .score-bar-fill.level-medium {
+      background: var(--score-medium);
+    }
+
+    .score-bar-fill.level-high {
+      background: var(--score-high);
+    }
+
+    .score-bar-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ===== ATTACK SURFACE GRID ===== */
+    .surface-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .surface-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .surface-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .surface-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .surface-stat.warn .surface-stat-value {
+      color: var(--medium);
+    }
+
+    .surface-stat.danger .surface-stat-value {
+      color: var(--high);
+    }
+
+    .surface-stat.ok .surface-stat-value {
+      color: var(--low);
+    }
+
+    .tls-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tls-badge.valid {
+      background: var(--low-bg);
+      color: var(--low);
+    }
+
+    .tls-badge.expired {
+      background: var(--high-bg);
+      color: var(--high);
+    }
+
+    .tls-badge.weak {
+      background: var(--medium-bg);
+      color: var(--medium);
+    }
+
+    .tls-badge.unreachable {
+      background: #f1f5f9;
+      color: var(--text-muted);
+    }
+
+    /* ===== RISK DISTRIBUTION CHART ===== */
+    .risk-dist {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .risk-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .risk-row-label {
+      width: 70px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .risk-row-label.high {
+      color: var(--high);
+    }
+
+    .risk-row-label.medium {
+      color: var(--medium);
+    }
+
+    .risk-row-label.low {
+      color: var(--low);
+    }
+
+    .risk-bar-track {
+      flex: 1;
+      height: 24px;
+      background: var(--bg);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .risk-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      min-width: 36px;
+    }
+
+    .risk-bar-fill.high {
+      background: var(--high);
+    }
+
+    .risk-bar-fill.medium {
+      background: var(--medium);
+    }
+
+    .risk-bar-fill.low {
+      background: var(--low);
+    }
+
+    .risk-count {
+      width: 32px;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* ===== EXECUTIVE SUMMARY ===== */
+    .posture-block {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .top-risks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .top-risk-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .top-risk-card h4 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .top-risk-card p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .next-step-block {
+      background: var(--accent-muted);
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .next-step-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .next-step-block p {
+      font-size: 14px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+
+    .passive-statement {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 12px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--bg);
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* ===== FINDING BLOCKS ===== */
+    .finding-block {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .finding-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .finding-header.high {
+      background: var(--high-bg);
+      border-bottom-color: var(--high-border);
+    }
+
+    .finding-header.medium {
+      background: var(--medium-bg);
+      border-bottom-color: var(--medium-border);
+    }
+
+    .finding-header.low {
+      background: var(--low-bg);
+      border-bottom-color: var(--low-border);
+    }
+
+    .finding-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .risk-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    .risk-pill.high {
+      background: var(--high);
+      color: #fff;
+    }
+
+    .risk-pill.medium {
+      background: var(--medium);
+      color: #fff;
+    }
+
+    .risk-pill.low {
+      background: var(--low);
+      color: #fff;
+    }
+
+    .finding-body {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .finding-body.full {
+      grid-template-columns: 1fr;
+    }
+
+    .finding-section h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .finding-section p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .business-impact-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .impact-entry {
+      display: flex;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .impact-key {
+      color: var(--text-muted);
+      font-weight: 500;
+      min-width: 190px;
+      flex-shrink: 0;
+    }
+
+    .impact-val {
+      color: var(--text);
+    }
+
+    .remediation-block {
+      grid-column: 1 / -1;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .remediation-block h4 {
+      color: var(--low);
+      margin-bottom: 6px;
+    }
+
+    .remediation-block p {
+      font-size: 14px;
+      color: #15803d;
+      line-height: 1.6;
+    }
+
+    .threat-scenario-block {
+      grid-column: 1 / -1;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .threat-scenario-block h4 {
+      color: #c2410c;
+    }
+
+    .threat-scenario-block p {
+      font-size: 14px;
+      color: #9a3412;
+      line-height: 1.6;
+    }
+
+    /* ===== HIGH RISK SUBDOMAINS ===== */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      background: var(--medium-bg);
+      border: 1px solid var(--medium-border);
+      color: var(--medium);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      font-weight: 500;
+    }
+
+    .tag.tech {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      color: #0369a1;
+    }
+
+    .tag.port {
+      background: var(--high-bg);
+      border-color: var(--high-border);
+      color: var(--high);
+    }
+
+    /* ===== FOOTER DISCLAIMER ===== */
+    .disclaimer {
+      border-top: 2px solid var(--border);
+      padding: 28px 0 0;
+      margin-top: 16px;
+    }
+
+    .disclaimer h3 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .disclaimer p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 860px;
+    }
+
+    .footer-brand {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* ===== DIVIDER ===== */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin: 32px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .header-inner {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .header-meta {
+        text-align: left;
+      }
+
+      .container {
+        padding: 20px 16px 48px;
+      }
+
+      .score-section {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .finding-body {
+        grid-template-columns: 1fr;
+      }
+
+      .finding-body .remediation-block,
+      .finding-body .threat-scenario-block {
+        grid-column: 1;
+      }
+
+      .top-risks {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <header class="header">
-    <h1>SentinelX External Exposure Intelligence Report</h1>
-    <p>Domain: <strong>{{ domain }}</strong> | Generated: {{ report_date }}</p>
+
+  <!-- ===== PAGE HEADER ===== -->
+  <header class="page-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="header-logo">SX</div>
+        <div class="header-title">
+          <h1>SentinelX External Exposure Intelligence Report</h1>
+          <p>Passive Reconnaissance Assessment — Confidential</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="domain-tag">{{ domain }}</div>
+        <div class="report-date">Generated: {{ report_date }}</div>
+      </div>
+    </div>
   </header>
 
   <main class="container">
-    <section class="card">
-      <h2>Executive Summary</h2>
-      <p>{{ executive_summary }}</p>
-    </section>
 
-    <section class="card">
-      <h2>Risk Overview</h2>
-      <span class="badge {{ overall_risk|lower }}">{{ overall_risk }}</span>
-    </section>
+    <!-- ===== EXPOSURE SCORE ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Exposure Score</h2>
+      </div>
+      <div class="card-body">
+        <div class="score-section">
+          <div class="score-dial level-{{ exposure_level|lower }}">
+            <span class="score-number">{{ exposure_score }}</span>
+            <span class="score-label">/ 10</span>
+          </div>
+          <div class="score-info">
+            <h3>{{ exposure_level }} Exposure — Score {{ exposure_score }}/10</h3>
+            <p>
+              {% if exposure_level == 'High' %}
+              This domain presents a <strong>high external exposure posture</strong>. Material risk
+              indicators were identified that require prioritised remediation attention from your
+              engineering and security teams within the next 30 days.
+              {% elif exposure_level == 'Medium' %}
+              This domain presents a <strong>moderate external exposure posture</strong>. Identified
+              risk indicators follow established attack patterns and should be remediated within a
+              structured 60-day remediation cycle.
+              {% else %}
+              This domain presents a <strong>low external exposure posture</strong> based on current
+              passive observable signals. Continued monitoring and periodic reassessment is recommended.
+              {% endif %}
+            </p>
+            <div class="score-bar-container">
+              <div class="score-bar-track">
+                <div class="score-bar-fill level-{{ exposure_level|lower }}"
+                  style="width: {{ (exposure_score / 10 * 100)|int }}%;"></div>
+              </div>
+              <span class="score-bar-label">Score {{ exposure_score }} of 10</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <section class="card">
-      <h2>Findings</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Issue</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Remediation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if findings %}
-            {% for finding in findings %}
-            <tr>
-              <td>{{ finding.Issue }}</td>
-              <td>{{ finding.Category }}</td>
-              <td>{{ finding.Description }}</td>
-              <td>{{ finding.Remediation }}</td>
-            </tr>
+    <!-- ===== ATTACK SURFACE OVERVIEW ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Attack Surface Overview</h2>
+      </div>
+      <div class="card-body">
+        <div class="surface-grid">
+          <div class="surface-stat {% if attack_surface.total_subdomains > 5 %}warn{% else %}ok{% endif %}">
+            <div class="surface-stat-value">{{ attack_surface.total_subdomains }}</div>
+            <div class="surface-stat-label">Subdomains Discovered</div>
+          </div>
+
+          <div class="surface-stat {% if attack_surface.high_risk_subdomains %}warn{% else %}ok{% endif %}">
+            <div class="surface-stat-value">{{ attack_surface.high_risk_subdomains|length }}</div>
+            <div class="surface-stat-label">High-Risk Pattern Subdomains</div>
+          </div>
+
+          <div class="surface-stat {% if attack_surface.missing_critical_headers %}warn{% else %}ok{% endif %}">
+            <div class="surface-stat-value">{{ attack_surface.missing_critical_headers|length }}</div>
+            <div class="surface-stat-label">Missing Critical Security Headers</div>
+          </div>
+
+          <div class="surface-stat {% if attack_surface.sensitive_open_ports %}danger{% else %}ok{% endif %}">
+            <div class="surface-stat-value">{{ attack_surface.sensitive_open_ports|length }}</div>
+            <div class="surface-stat-label">Sensitive Ports Reachable</div>
+          </div>
+
+          <div class="surface-stat">
+            <div class="surface-stat-value">
+              <span class="tls-badge {{ attack_surface.tls_status|lower }}">
+                {% if attack_surface.tls_status == 'Valid' %}✓{% elif attack_surface.tls_status == 'Expired' %}✗{% else
+                %}⚠{% endif %}
+                {{ attack_surface.tls_status }}
+              </span>
+            </div>
+            <div class="surface-stat-label" style="margin-top: 8px;">TLS Certificate Status</div>
+          </div>
+        </div>
+
+        {% if attack_surface.high_risk_subdomains %}
+        <div style="margin-top: 20px;">
+          <div
+            style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+            High-Risk Pattern Subdomains</div>
+          <div class="tag-list">
+            {% for host in attack_surface.high_risk_subdomains %}
+            <span class="tag">{{ host }}</span>
             {% endfor %}
-          {% else %}
-            <tr>
-              <td colspan="4">No findings were returned.</td>
-            </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </section>
-
-    <section class="card">
-      <h2>Recommendations</h2>
-      <ul>
-        {% if recommendations %}
-          {% for item in recommendations %}
-            <li>{{ item }}</li>
-          {% endfor %}
-        {% else %}
-          <li>Continue periodic passive exposure assessments and track changes over time.</li>
+          </div>
+        </div>
         {% endif %}
-      </ul>
-      <p class="muted">This report is based on passive, publicly observable signals only.</p>
-    </section>
+
+        {% if attack_surface.sensitive_open_ports %}
+        <div style="margin-top: 16px;">
+          <div
+            style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+            Sensitive Ports</div>
+          <div class="tag-list">
+            {% for port in attack_surface.sensitive_open_ports %}
+            <span class="tag port">Port {{ port }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if attack_surface.tech_stack_summary %}
+        <div style="margin-top: 16px;">
+          <div
+            style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+            Technology Stack Indicators</div>
+          <div class="tag-list">
+            {% for tech in attack_surface.tech_stack_summary %}
+            <span class="tag tech">{{ tech }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ===== RISK DISTRIBUTION ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Risk Distribution</h2>
+      </div>
+      <div class="card-body">
+        <div class="risk-dist">
+          {% set high_count = findings | selectattr('RiskCategory', 'equalto', 'High') | list | length %}
+          {% set medium_count = findings | selectattr('RiskCategory', 'equalto', 'Medium') | list | length %}
+          {% set low_count = findings | selectattr('RiskCategory', 'equalto', 'Low') | list | length %}
+          {% set total = findings | length %}
+
+          {% for label, count, css in [('High', high_count, 'high'), ('Medium', medium_count, 'medium'), ('Low',
+          low_count, 'low')] %}
+          <div class="risk-row">
+            <div class="risk-row-label {{ css }}">{{ label }}</div>
+            <div class="risk-bar-track">
+              {% if total > 0 %}
+              <div class="risk-bar-fill {{ css }}" style="width: {{ (count / total * 100)|int }}%;">
+                {% if count > 0 %}{{ count }}{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="risk-count">{{ count }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EXECUTIVE SUMMARY ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Executive Summary</h2>
+      </div>
+      <div class="card-body">
+        {% if executive_summary is mapping %}
+        <div class="posture-block">{{ executive_summary.OverallPosture }}</div>
+
+        <div class="top-risks">
+          <div class="top-risk-card">
+            <h4>Primary Risk Signal</h4>
+            <p>{{ executive_summary.TopRiskOne }}</p>
+          </div>
+          <div class="top-risk-card">
+            <h4>Secondary Risk Signal</h4>
+            <p>{{ executive_summary.TopRiskTwo }}</p>
+          </div>
+        </div>
+
+        <div class="next-step-block">
+          <div class="next-step-icon">→</div>
+          <p><strong>Recommended Next Step:</strong> {{ executive_summary.RecommendedNextStep }}</p>
+        </div>
+
+        <div class="passive-statement">{{ executive_summary.PassiveAssessmentStatement }}</div>
+
+        {% else %}
+        <div class="posture-block">{{ executive_summary }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ===== FINDINGS ===== -->
+    <div class="section-label">Detailed Findings</div>
+
+    {% if findings %}
+    {% for finding in findings %}
+    {% set risk_class = finding.RiskCategory|lower if finding.RiskCategory else 'low' %}
+    <div class="finding-block">
+      <div class="finding-header {{ risk_class }}">
+        <span class="finding-title">{{ finding.Issue }}</span>
+        <span class="risk-pill {{ risk_class }}">{{ finding.RiskCategory }}</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>{{ finding.TechnicalDescription if finding.TechnicalDescription else finding.get('Description', '—') }}</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>{{ finding.SecurityImpact if finding.SecurityImpact else '—' }}</p>
+        </div>
+
+        {% if finding.BusinessImpact is mapping %}
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            {% for key, label in [
+            ('DataExposureRisk', 'Data Exposure'),
+            ('CredentialCompromiseRisk', 'Credential Compromise'),
+            ('InfrastructureEnumerationRisk', 'Infrastructure Enumeration'),
+            ('ComplianceRisk', 'Compliance'),
+            ('ReputationRisk', 'Reputation')
+            ] %}
+            {% if finding.BusinessImpact.get(key) %}
+            <div class="impact-entry">
+              <span class="impact-key">{{ label }}</span>
+              <span class="impact-val">{{ finding.BusinessImpact[key] }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if finding.LikelyThreatScenario %}
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>{{ finding.LikelyThreatScenario }}</p>
+        </div>
+        {% endif %}
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>{{ finding.RemediationRecommendation if finding.RemediationRecommendation else finding.get('Remediation',
+            '—') }}</p>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card">
+      <div class="card-body">
+        <p style="color: var(--text-muted); font-size: 14px;">No structured findings were generated for this scan.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ===== DISCLAIMER ===== -->
+    <div class="disclaimer">
+      <h3>Scope of Assessment</h3>
+      <p>
+        This assessment is limited to passive, publicly observable infrastructure signals.
+        No intrusive testing, active scanning, credential testing, exploitation techniques,
+        or brute-force methods were used at any stage of this engagement. All data was collected
+        exclusively from publicly accessible sources including DNS records, TLS certificate
+        transparency logs, and HTTP response headers. Results reflect the external observation
+        posture at the time of assessment and are subject to change as infrastructure evolves.
+      </p>
+      <div class="footer-brand">SentinelX External Exposure Intelligence Engine · Passive Reconnaissance Only</div>
+    </div>
+
   </main>
 </body>
-</html>
 
+</html>

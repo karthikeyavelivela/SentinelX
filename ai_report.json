@@ -1,25 +1,117 @@
 {
-  "ExecutiveSummary": "Passive external exposure checks were completed successfully. This fallback report was generated because the AI service was unavailable.",
+  "ExecutiveSummary": {
+    "OverallPosture": "Passive external reconnaissance of kluniversity.in identified a medium exposure posture across 20 resolvable subdomain(s). The assessment surfaced 1 high-severity and 3 medium-severity indicators warranting structured remediation attention.",
+    "TopRiskOne": "Sensitive service ports publicly reachable (21) \u2014 direct attack surface for credential brute-force, vulnerability exploitation, and lateral movement.",
+    "TopRiskTwo": "HSTS header absent \u2014 browsers may permit unencrypted HTTP connections, exposing session tokens to network-level interception.",
+    "RecommendedNextStep": "Prioritise remediation of High-severity findings within the next 30 days. Schedule a follow-up passive assessment in 90 days to track posture improvement.",
+    "PassiveAssessmentStatement": "This assessment relied exclusively on passive, publicly observable signals. No intrusive testing, exploitation, or active probing was performed at any stage."
+  },
   "Findings": [
     {
-      "Issue": "Uncommon publicly reachable ports detected: 21",
-      "Category": "Medium",
-      "Description": "Uncommon publicly reachable ports detected: 21",
-      "Remediation": "Review finding and apply standard hardening controls."
+      "Issue": "Sensitive service ports publicly reachable (21) \u2014 direct attack surface for credential brute-force, vulnerability exploi",
+      "TechnicalDescription": "Sensitive service ports publicly reachable (21) \u2014 direct attack surface for credential brute-force, vulnerability exploitation, and lateral movement.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Review this finding with your infrastructure team and apply targeted hardening controls.",
+      "RiskCategory": "High"
     },
     {
-      "Issue": "TLS endpoint is reachable and certificate details were collected.",
-      "Category": "Low",
-      "Description": "TLS endpoint is reachable and certificate details were collected.",
-      "Remediation": "Review finding and apply standard hardening controls."
+      "Issue": "HSTS header absent \u2014 browsers may permit unencrypted HTTP connections, exposing session tokens to network-level intercep",
+      "TechnicalDescription": "HSTS header absent \u2014 browsers may permit unencrypted HTTP connections, exposing session tokens to network-level interception.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Add the response header 'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload' to all HTTPS responses via your web server or CDN configuration.",
+      "RiskCategory": "Medium"
     },
     {
-      "Issue": "Technology fingerprinting identified 3 indicators.",
-      "Category": "Low",
-      "Description": "Technology fingerprinting identified 3 indicators.",
-      "Remediation": "Review finding and apply standard hardening controls."
+      "Issue": "Content-Security-Policy header absent \u2014 application is unprotected against cross-site scripting (XSS) and content-inject",
+      "TechnicalDescription": "Content-Security-Policy header absent \u2014 application is unprotected against cross-site scripting (XSS) and content-injection attacks.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Define and deploy a Content-Security-Policy header that restricts trusted script, style, and media origins. Use report-uri or report-to directives to monitor violations before enforcing.",
+      "RiskCategory": "Medium"
+    },
+    {
+      "Issue": "X-Frame-Options header absent \u2014 application may be embeddable in third-party frames, enabling clickjacking attacks again",
+      "TechnicalDescription": "X-Frame-Options header absent \u2014 application may be embeddable in third-party frames, enabling clickjacking attacks against authenticated users.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Add 'X-Frame-Options: DENY' (or SAMEORIGIN if embedding is required) to all HTTP responses. Alternatively use Content-Security-Policy's frame-ancestors directive.",
+      "RiskCategory": "Medium"
+    },
+    {
+      "Issue": "Valid TLS endpoint reachable. Certificate chain and expiry details collected.",
+      "TechnicalDescription": "Valid TLS endpoint reachable. Certificate chain and expiry details collected.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Review this finding with your infrastructure team and apply targeted hardening controls.",
+      "RiskCategory": "Low"
+    },
+    {
+      "Issue": "Technology stack fingerprinted (4 indicators). Public exposure of framework and version information may inform targeted ",
+      "TechnicalDescription": "Technology stack fingerprinted (4 indicators). Public exposure of framework and version information may inform targeted research.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Review this finding with your infrastructure team and apply targeted hardening controls.",
+      "RiskCategory": "Low"
+    },
+    {
+      "Issue": "20 resolvable subdomains discovered. Broad subdomain exposure increases overall attack surface and enumeration potential",
+      "TechnicalDescription": "20 resolvable subdomains discovered. Broad subdomain exposure increases overall attack surface and enumeration potential.",
+      "SecurityImpact": "This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.",
+      "BusinessImpact": {
+        "DataExposureRisk": "Dependent on service exposed \u2014 evaluate data access scope.",
+        "CredentialCompromiseRisk": "Possible if authentication interfaces or credentials are reachable.",
+        "InfrastructureEnumerationRisk": "External adversaries can map service topology from observable signals.",
+        "ComplianceRisk": "May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.",
+        "ReputationRisk": "Publicly observable misconfigurations erode technical credibility with enterprise buyers."
+      },
+      "LikelyThreatScenario": "An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.",
+      "RemediationRecommendation": "Review this finding with your infrastructure team and apply targeted hardening controls.",
+      "RiskCategory": "Low"
     }
   ],
-  "OverallRisk": "Medium",
-  "GenerationNote": "OPENAI_API_KEY is not configured."
+  "OverallRisk": "High"
 }

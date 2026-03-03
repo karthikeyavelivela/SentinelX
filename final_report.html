@@ -1,149 +1,1552 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SentinelX Exposure Report</title>
+  <title>SentinelX Exposure Report — kluniversity.in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* ===== DESIGN TOKENS ===== */
     :root {
-      --bg: #f4f6f8;
+      --brand: #0f172a;
+      --brand-light: #1e293b;
+      --accent: #3b82f6;
+      --accent-muted: #dbeafe;
+      --bg: #f8fafc;
       --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --header: #111827;
-      --line: #e5e7eb;
-      --high: #b91c1c;
-      --medium: #b45309;
-      --low: #166534;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --high: #dc2626;
+      --high-bg: #fef2f2;
+      --high-border: #fecaca;
+      --medium: #d97706;
+      --medium-bg: #fffbeb;
+      --medium-border: #fde68a;
+      --low: #16a34a;
+      --low-bg: #f0fdf4;
+      --low-border: #bbf7d0;
+      --score-low: #16a34a;
+      --score-medium: #d97706;
+      --score-high: #dc2626;
     }
-    * { box-sizing: border-box; }
-    body {
+
+    /* ===== RESET & BASE ===== */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
       background: var(--bg);
       color: var(--text);
-      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
     }
-    .header {
-      background: var(--header);
+
+    /* ===== HEADER ===== */
+    .page-header {
+      background: var(--brand);
       color: #fff;
-      padding: 24px;
+      padding: 0;
+      border-bottom: 3px solid var(--accent);
     }
-    .header h1 { margin: 0 0 8px; font-size: 24px; }
-    .header p { margin: 0; color: #d1d5db; }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 32px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-logo {
+      width: 44px;
+      height: 44px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: #fff;
+    }
+
+    .header-title h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .header-meta {
+      text-align: right;
+    }
+
+    .header-meta .domain-tag {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+    }
+
+    .header-meta .report-date {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    /* ===== LAYOUT ===== */
     .container {
-      max-width: 1000px;
-      margin: 24px auto;
-      padding: 0 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 32px 64px;
     }
+
+    /* ===== CARDS ===== */
     .card {
       background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      margin-bottom: 16px;
-      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
     }
-    h2 { margin-top: 0; font-size: 20px; }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      color: #fff;
-      font-weight: 600;
-      font-size: 13px;
-      text-transform: uppercase;
+
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .badge.high { background: var(--high); }
-    .badge.medium { background: var(--medium); }
-    .badge.low { background: var(--low); }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+
+    .card-header h2 {
       font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
     }
-    th, td {
-      border: 1px solid var(--line);
-      padding: 10px;
-      text-align: left;
-      vertical-align: top;
+
+    .card-body {
+      padding: 24px;
     }
-    th { background: #f9fafb; }
-    .muted { color: var(--muted); font-size: 13px; }
-    ul { margin: 0; padding-left: 20px; }
-    li { margin-bottom: 8px; }
+
+    /* ===== EXPOSURE SCORE ===== */
+    .score-section {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .score-dial {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 4px solid transparent;
+      position: relative;
+    }
+
+    .score-dial.level-low {
+      background: var(--low-bg);
+      border-color: var(--score-low);
+      box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.08);
+    }
+
+    .score-dial.level-medium {
+      background: var(--medium-bg);
+      border-color: var(--score-medium);
+      box-shadow: 0 0 0 6px rgba(217, 119, 6, 0.08);
+    }
+
+    .score-dial.level-high {
+      background: var(--high-bg);
+      border-color: var(--score-high);
+      box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.08);
+    }
+
+    .score-number {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .score-dial.level-low .score-number {
+      color: var(--score-low);
+    }
+
+    .score-dial.level-medium .score-number {
+      color: var(--score-medium);
+    }
+
+    .score-dial.level-high .score-number {
+      color: var(--score-high);
+    }
+
+    .score-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    .score-dial.level-low .score-label {
+      color: var(--score-low);
+    }
+
+    .score-dial.level-medium .score-label {
+      color: var(--score-medium);
+    }
+
+    .score-dial.level-high .score-label {
+      color: var(--score-high);
+    }
+
+    .score-info h3 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .score-info p {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 560px;
+    }
+
+    .score-bar-container {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+
+    .score-bar-fill.level-low {
+      background: var(--score-low);
+    }
+
+    .score-bar-fill.level-medium {
+      background: var(--score-medium);
+    }
+
+    .score-bar-fill.level-high {
+      background: var(--score-high);
+    }
+
+    .score-bar-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ===== ATTACK SURFACE GRID ===== */
+    .surface-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .surface-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .surface-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .surface-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .surface-stat.warn .surface-stat-value {
+      color: var(--medium);
+    }
+
+    .surface-stat.danger .surface-stat-value {
+      color: var(--high);
+    }
+
+    .surface-stat.ok .surface-stat-value {
+      color: var(--low);
+    }
+
+    .tls-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tls-badge.valid {
+      background: var(--low-bg);
+      color: var(--low);
+    }
+
+    .tls-badge.expired {
+      background: var(--high-bg);
+      color: var(--high);
+    }
+
+    .tls-badge.weak {
+      background: var(--medium-bg);
+      color: var(--medium);
+    }
+
+    .tls-badge.unreachable {
+      background: #f1f5f9;
+      color: var(--text-muted);
+    }
+
+    /* ===== RISK DISTRIBUTION CHART ===== */
+    .risk-dist {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .risk-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .risk-row-label {
+      width: 70px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .risk-row-label.high {
+      color: var(--high);
+    }
+
+    .risk-row-label.medium {
+      color: var(--medium);
+    }
+
+    .risk-row-label.low {
+      color: var(--low);
+    }
+
+    .risk-bar-track {
+      flex: 1;
+      height: 24px;
+      background: var(--bg);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .risk-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      min-width: 36px;
+    }
+
+    .risk-bar-fill.high {
+      background: var(--high);
+    }
+
+    .risk-bar-fill.medium {
+      background: var(--medium);
+    }
+
+    .risk-bar-fill.low {
+      background: var(--low);
+    }
+
+    .risk-count {
+      width: 32px;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* ===== EXECUTIVE SUMMARY ===== */
+    .posture-block {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .top-risks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .top-risk-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .top-risk-card h4 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .top-risk-card p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .next-step-block {
+      background: var(--accent-muted);
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .next-step-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .next-step-block p {
+      font-size: 14px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+
+    .passive-statement {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 12px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--bg);
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* ===== FINDING BLOCKS ===== */
+    .finding-block {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .finding-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .finding-header.high {
+      background: var(--high-bg);
+      border-bottom-color: var(--high-border);
+    }
+
+    .finding-header.medium {
+      background: var(--medium-bg);
+      border-bottom-color: var(--medium-border);
+    }
+
+    .finding-header.low {
+      background: var(--low-bg);
+      border-bottom-color: var(--low-border);
+    }
+
+    .finding-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .risk-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    .risk-pill.high {
+      background: var(--high);
+      color: #fff;
+    }
+
+    .risk-pill.medium {
+      background: var(--medium);
+      color: #fff;
+    }
+
+    .risk-pill.low {
+      background: var(--low);
+      color: #fff;
+    }
+
+    .finding-body {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .finding-body.full {
+      grid-template-columns: 1fr;
+    }
+
+    .finding-section h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .finding-section p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .business-impact-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .impact-entry {
+      display: flex;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .impact-key {
+      color: var(--text-muted);
+      font-weight: 500;
+      min-width: 190px;
+      flex-shrink: 0;
+    }
+
+    .impact-val {
+      color: var(--text);
+    }
+
+    .remediation-block {
+      grid-column: 1 / -1;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .remediation-block h4 {
+      color: var(--low);
+      margin-bottom: 6px;
+    }
+
+    .remediation-block p {
+      font-size: 14px;
+      color: #15803d;
+      line-height: 1.6;
+    }
+
+    .threat-scenario-block {
+      grid-column: 1 / -1;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .threat-scenario-block h4 {
+      color: #c2410c;
+    }
+
+    .threat-scenario-block p {
+      font-size: 14px;
+      color: #9a3412;
+      line-height: 1.6;
+    }
+
+    /* ===== HIGH RISK SUBDOMAINS ===== */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      background: var(--medium-bg);
+      border: 1px solid var(--medium-border);
+      color: var(--medium);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      font-weight: 500;
+    }
+
+    .tag.tech {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      color: #0369a1;
+    }
+
+    .tag.port {
+      background: var(--high-bg);
+      border-color: var(--high-border);
+      color: var(--high);
+    }
+
+    /* ===== FOOTER DISCLAIMER ===== */
+    .disclaimer {
+      border-top: 2px solid var(--border);
+      padding: 28px 0 0;
+      margin-top: 16px;
+    }
+
+    .disclaimer h3 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .disclaimer p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 860px;
+    }
+
+    .footer-brand {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* ===== DIVIDER ===== */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin: 32px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .header-inner {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .header-meta {
+        text-align: left;
+      }
+
+      .container {
+        padding: 20px 16px 48px;
+      }
+
+      .score-section {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .finding-body {
+        grid-template-columns: 1fr;
+      }
+
+      .finding-body .remediation-block,
+      .finding-body .threat-scenario-block {
+        grid-column: 1;
+      }
+
+      .top-risks {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <header class="header">
-    <h1>SentinelX External Exposure Intelligence Report</h1>
-    <p>Domain: <strong>petzu.in</strong> | Generated: 2026-03-03 13:07 UTC</p>
+
+  <!-- ===== PAGE HEADER ===== -->
+  <header class="page-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="header-logo">SX</div>
+        <div class="header-title">
+          <h1>SentinelX External Exposure Intelligence Report</h1>
+          <p>Passive Reconnaissance Assessment — Confidential</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="domain-tag">kluniversity.in</div>
+        <div class="report-date">Generated: 2026-03-03 16:57 UTC</div>
+      </div>
+    </div>
   </header>
 
   <main class="container">
-    <section class="card">
-      <h2>Executive Summary</h2>
-      <p>Passive external exposure checks were completed successfully. This fallback report was generated because the AI service was unavailable.</p>
-    </section>
 
-    <section class="card">
-      <h2>Risk Overview</h2>
-      <span class="badge medium">Medium</span>
-    </section>
+    <!-- ===== EXPOSURE SCORE ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Exposure Score</h2>
+      </div>
+      <div class="card-body">
+        <div class="score-section">
+          <div class="score-dial level-medium">
+            <span class="score-number">7</span>
+            <span class="score-label">/ 10</span>
+          </div>
+          <div class="score-info">
+            <h3>Medium Exposure — Score 7/10</h3>
+            <p>
+              
+              This domain presents a <strong>moderate external exposure posture</strong>. Identified
+              risk indicators follow established attack patterns and should be remediated within a
+              structured 60-day remediation cycle.
+              
+            </p>
+            <div class="score-bar-container">
+              <div class="score-bar-track">
+                <div class="score-bar-fill level-medium"
+                  style="width: 70%;"></div>
+              </div>
+              <span class="score-bar-label">Score 7 of 10</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <section class="card">
-      <h2>Findings</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Issue</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Remediation</th>
-          </tr>
-        </thead>
-        <tbody>
-          
-            
-            <tr>
-              <td>Uncommon publicly reachable ports detected: 21</td>
-              <td>Medium</td>
-              <td>Uncommon publicly reachable ports detected: 21</td>
-              <td>Review finding and apply standard hardening controls.</td>
-            </tr>
-            
-            <tr>
-              <td>TLS endpoint is reachable and certificate details were collected.</td>
-              <td>Low</td>
-              <td>TLS endpoint is reachable and certificate details were collected.</td>
-              <td>Review finding and apply standard hardening controls.</td>
-            </tr>
-            
-            <tr>
-              <td>Technology fingerprinting identified 3 indicators.</td>
-              <td>Low</td>
-              <td>Technology fingerprinting identified 3 indicators.</td>
-              <td>Review finding and apply standard hardening controls.</td>
-            </tr>
-            
-          
-        </tbody>
-      </table>
-    </section>
+    <!-- ===== ATTACK SURFACE OVERVIEW ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Attack Surface Overview</h2>
+      </div>
+      <div class="card-body">
+        <div class="surface-grid">
+          <div class="surface-stat warn">
+            <div class="surface-stat-value">20</div>
+            <div class="surface-stat-label">Subdomains Discovered</div>
+          </div>
 
-    <section class="card">
-      <h2>Recommendations</h2>
-      <ul>
+          <div class="surface-stat ok">
+            <div class="surface-stat-value">0</div>
+            <div class="surface-stat-label">High-Risk Pattern Subdomains</div>
+          </div>
+
+          <div class="surface-stat warn">
+            <div class="surface-stat-value">3</div>
+            <div class="surface-stat-label">Missing Critical Security Headers</div>
+          </div>
+
+          <div class="surface-stat danger">
+            <div class="surface-stat-value">1</div>
+            <div class="surface-stat-label">Sensitive Ports Reachable</div>
+          </div>
+
+          <div class="surface-stat">
+            <div class="surface-stat-value">
+              <span class="tls-badge valid">
+                ✓
+                Valid
+              </span>
+            </div>
+            <div class="surface-stat-label" style="margin-top: 8px;">TLS Certificate Status</div>
+          </div>
+        </div>
+
         
-          
-            <li>Review finding and apply standard hardening controls.</li>
-          
-            <li>Review finding and apply standard hardening controls.</li>
-          
-            <li>Review finding and apply standard hardening controls.</li>
-          
+
         
-      </ul>
-      <p class="muted">This report is based on passive, publicly observable signals only.</p>
-    </section>
+        <div style="margin-top: 16px;">
+          <div
+            style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+            Sensitive Ports</div>
+          <div class="tag-list">
+            
+            <span class="tag port">Port 21</span>
+            
+          </div>
+        </div>
+        
+
+        
+        <div style="margin-top: 16px;">
+          <div
+            style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+            Technology Stack Indicators</div>
+          <div class="tag-list">
+            
+            <span class="tag tech">Bootstrap</span>
+            
+            <span class="tag tech">Cloudflare</span>
+            
+            <span class="tag tech">Server: Microsoft-IIS/10.0</span>
+            
+            <span class="tag tech">X-Powered-By: ASP.NET</span>
+            
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- ===== RISK DISTRIBUTION ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Risk Distribution</h2>
+      </div>
+      <div class="card-body">
+        <div class="risk-dist">
+          
+          
+          
+          
+
+          
+          <div class="risk-row">
+            <div class="risk-row-label high">High</div>
+            <div class="risk-bar-track">
+              
+              <div class="risk-bar-fill high" style="width: 14%;">
+                1
+              </div>
+              
+            </div>
+            <div class="risk-count">1</div>
+          </div>
+          
+          <div class="risk-row">
+            <div class="risk-row-label medium">Medium</div>
+            <div class="risk-bar-track">
+              
+              <div class="risk-bar-fill medium" style="width: 42%;">
+                3
+              </div>
+              
+            </div>
+            <div class="risk-count">3</div>
+          </div>
+          
+          <div class="risk-row">
+            <div class="risk-row-label low">Low</div>
+            <div class="risk-bar-track">
+              
+              <div class="risk-bar-fill low" style="width: 42%;">
+                3
+              </div>
+              
+            </div>
+            <div class="risk-count">3</div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EXECUTIVE SUMMARY ===== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Executive Summary</h2>
+      </div>
+      <div class="card-body">
+        
+        <div class="posture-block">Passive external reconnaissance of kluniversity.in identified a medium exposure posture across 20 resolvable subdomain(s). The assessment surfaced 1 high-severity and 3 medium-severity indicators warranting structured remediation attention.</div>
+
+        <div class="top-risks">
+          <div class="top-risk-card">
+            <h4>Primary Risk Signal</h4>
+            <p>Sensitive service ports publicly reachable (21) — direct attack surface for credential brute-force, vulnerability exploitation, and lateral movement.</p>
+          </div>
+          <div class="top-risk-card">
+            <h4>Secondary Risk Signal</h4>
+            <p>HSTS header absent — browsers may permit unencrypted HTTP connections, exposing session tokens to network-level interception.</p>
+          </div>
+        </div>
+
+        <div class="next-step-block">
+          <div class="next-step-icon">→</div>
+          <p><strong>Recommended Next Step:</strong> Prioritise remediation of High-severity findings within the next 30 days. Schedule a follow-up passive assessment in 90 days to track posture improvement.</p>
+        </div>
+
+        <div class="passive-statement">This assessment relied exclusively on passive, publicly observable signals. No intrusive testing, exploitation, or active probing was performed at any stage.</div>
+
+        
+      </div>
+    </div>
+
+    <!-- ===== FINDINGS ===== -->
+    <div class="section-label">Detailed Findings</div>
+
+    
+    
+    
+    <div class="finding-block">
+      <div class="finding-header high">
+        <span class="finding-title">Sensitive service ports publicly reachable (21) — direct attack surface for credential brute-force, vulnerability exploi</span>
+        <span class="risk-pill high">High</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>Sensitive service ports publicly reachable (21) — direct attack surface for credential brute-force, vulnerability exploitation, and lateral movement.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Review this finding with your infrastructure team and apply targeted hardening controls.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+    <div class="finding-block">
+      <div class="finding-header medium">
+        <span class="finding-title">HSTS header absent — browsers may permit unencrypted HTTP connections, exposing session tokens to network-level intercep</span>
+        <span class="risk-pill medium">Medium</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>HSTS header absent — browsers may permit unencrypted HTTP connections, exposing session tokens to network-level interception.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Add the response header &#39;Strict-Transport-Security: max-age=31536000; includeSubDomains; preload&#39; to all HTTPS responses via your web server or CDN configuration.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+    <div class="finding-block">
+      <div class="finding-header medium">
+        <span class="finding-title">Content-Security-Policy header absent — application is unprotected against cross-site scripting (XSS) and content-inject</span>
+        <span class="risk-pill medium">Medium</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>Content-Security-Policy header absent — application is unprotected against cross-site scripting (XSS) and content-injection attacks.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Define and deploy a Content-Security-Policy header that restricts trusted script, style, and media origins. Use report-uri or report-to directives to monitor violations before enforcing.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+    <div class="finding-block">
+      <div class="finding-header medium">
+        <span class="finding-title">X-Frame-Options header absent — application may be embeddable in third-party frames, enabling clickjacking attacks again</span>
+        <span class="risk-pill medium">Medium</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>X-Frame-Options header absent — application may be embeddable in third-party frames, enabling clickjacking attacks against authenticated users.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Add &#39;X-Frame-Options: DENY&#39; (or SAMEORIGIN if embedding is required) to all HTTP responses. Alternatively use Content-Security-Policy&#39;s frame-ancestors directive.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+    <div class="finding-block">
+      <div class="finding-header low">
+        <span class="finding-title">Valid TLS endpoint reachable. Certificate chain and expiry details collected.</span>
+        <span class="risk-pill low">Low</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>Valid TLS endpoint reachable. Certificate chain and expiry details collected.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Review this finding with your infrastructure team and apply targeted hardening controls.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+    <div class="finding-block">
+      <div class="finding-header low">
+        <span class="finding-title">Technology stack fingerprinted (4 indicators). Public exposure of framework and version information may inform targeted </span>
+        <span class="risk-pill low">Low</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>Technology stack fingerprinted (4 indicators). Public exposure of framework and version information may inform targeted research.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Review this finding with your infrastructure team and apply targeted hardening controls.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+    <div class="finding-block">
+      <div class="finding-header low">
+        <span class="finding-title">20 resolvable subdomains discovered. Broad subdomain exposure increases overall attack surface and enumeration potential</span>
+        <span class="risk-pill low">Low</span>
+      </div>
+      <div class="finding-body">
+
+        <div class="finding-section">
+          <h4>Technical Description</h4>
+          <p>20 resolvable subdomains discovered. Broad subdomain exposure increases overall attack surface and enumeration potential.</p>
+        </div>
+
+        <div class="finding-section">
+          <h4>Security Impact</h4>
+          <p>This condition represents a validated passive indicator of external exposure. The specific impact depends on how this signal is leveraged by an adversary.</p>
+        </div>
+
+        
+        <div class="finding-section" style="grid-column: 1 / -1;">
+          <h4>Business Impact</h4>
+          <div class="business-impact-grid">
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Data Exposure</span>
+              <span class="impact-val">Dependent on service exposed — evaluate data access scope.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Credential Compromise</span>
+              <span class="impact-val">Possible if authentication interfaces or credentials are reachable.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Infrastructure Enumeration</span>
+              <span class="impact-val">External adversaries can map service topology from observable signals.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Compliance</span>
+              <span class="impact-val">May constitute a control gap under SOC 2, PCI-DSS, or GDPR depending on data classification.</span>
+            </div>
+            
+            
+            
+            <div class="impact-entry">
+              <span class="impact-key">Reputation</span>
+              <span class="impact-val">Publicly observable misconfigurations erode technical credibility with enterprise buyers.</span>
+            </div>
+            
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="threat-scenario-block">
+          <h4>Likely Threat Scenario</h4>
+          <p>An adversary performing passive OSINT discovers this condition, incorporates it into a target dossier, and uses it to inform a targeted phishing, credential-stuffing, or direct intrusion attempt.</p>
+        </div>
+        
+
+        <div class="remediation-block">
+          <h4>Remediation Recommendation</h4>
+          <p>Review this finding with your infrastructure team and apply targeted hardening controls.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    
+
+    <!-- ===== DISCLAIMER ===== -->
+    <div class="disclaimer">
+      <h3>Scope of Assessment</h3>
+      <p>
+        This assessment is limited to passive, publicly observable infrastructure signals.
+        No intrusive testing, active scanning, credential testing, exploitation techniques,
+        or brute-force methods were used at any stage of this engagement. All data was collected
+        exclusively from publicly accessible sources including DNS records, TLS certificate
+        transparency logs, and HTTP response headers. Results reflect the external observation
+        posture at the time of assessment and are subject to change as infrastructure evolves.
+      </p>
+      <div class="footer-brand">SentinelX External Exposure Intelligence Engine · Passive Reconnaissance Only</div>
+    </div>
+
   </main>
 </body>
+
 </html>

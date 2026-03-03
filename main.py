@@ -35,22 +35,30 @@ def main() -> None:
     logger = logging.getLogger("sentinelx.main")
 
     try:
+        logger.info("Scan pipeline initiated for domain: %s", args.domain)
         scan_data = run_passive_scan(args.domain)
         structured_output = build_structured_output(scan_data)
         save_json(structured_output, "structured_output.json")
+        logger.info("Structured output saved to structured_output.json")
 
         ai_report = generate_ai_report(
             structured_input_path="structured_output.json",
             output_path="ai_report.json",
         )
+        logger.info("AI report saved to ai_report.json")
 
         render_html_report(
             structured_data=structured_output,
             ai_data=ai_report,
             output_path="final_report.html",
         )
+        logger.info("HTML report saved to final_report.html")
 
-        print("Report successfully generated: final_report.html")
+        logger.info("Scan pipeline completed successfully for %s", args.domain)
+        print("SentinelX Premium Exposure Report generated successfully.")
+    except ValueError as exc:
+        logger.error("Invalid input — %s", exc)
+        raise SystemExit(1) from exc
     except Exception as exc:
         logger.exception("Pipeline failed: %s", exc)
         raise SystemExit(1) from exc

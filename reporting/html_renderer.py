@@ -1,4 +1,4 @@
-"""HTML report renderer for executive-ready output."""
+"""HTML report renderer for executive-ready premium output."""
 
 from __future__ import annotations
 
@@ -18,7 +18,8 @@ def render_html_report(
     output_path: str = "final_report.html",
     template_name: str = "report_template.html",
 ) -> str:
-    """Render final HTML report using Jinja2 template."""
+    """Render the premium HTML report using Jinja2 template."""
+    LOGGER.info("Rendering HTML report to %s", output_path)
     templates_dir = Path(__file__).resolve().parent.parent / "templates"
     env = Environment(
         loader=FileSystemLoader(str(templates_dir)),
@@ -26,19 +27,29 @@ def render_html_report(
     )
     template = env.get_template(template_name)
 
-    overall_risk = ai_data.get("OverallRisk", "Low")
+    # ------------------------------------------------------------------ #
+    # Build Jinja2 context from structured and AI data
+    # ------------------------------------------------------------------ #
+    overall_risk = ai_data.get("OverallRisk", structured_data.get("exposure_level", "Low"))
+    executive_summary = ai_data.get("ExecutiveSummary", "No summary available.")
+    findings = ai_data.get("Findings", [])
+    attack_surface = structured_data.get("attack_surface", {})
+    exposure_score = structured_data.get("exposure_score", 1)
+    exposure_level = structured_data.get("exposure_level", "Low")
+
     rendered = template.render(
         domain=structured_data.get("domain", "unknown"),
         report_date=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
-        executive_summary=ai_data.get("ExecutiveSummary", "No summary generated."),
+        executive_summary=executive_summary,
         overall_risk=overall_risk,
-        findings=ai_data.get("Findings", []),
-        recommendations=[f.get("Remediation", "") for f in ai_data.get("Findings", []) if f.get("Remediation")],
+        findings=findings,
+        attack_surface=attack_surface,
+        exposure_score=exposure_score,
+        exposure_level=exposure_level,
         structured=structured_data,
     )
 
     with open(output_path, "w", encoding="utf-8") as file:
         file.write(rendered)
-    LOGGER.info("HTML report generated at %s", output_path)
+    LOGGER.info("HTML report successfully written to %s", output_path)
     return output_path
-

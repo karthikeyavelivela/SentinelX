@@ -1,33 +1,51 @@
 {
-  "domain": "petzu.in",
-  "timestamp": "2026-03-03T13:07:20.208224+00:00",
+  "domain": "kluniversity.in",
+  "timestamp": "2026-03-03T16:57:15.815776+00:00",
   "subdomains": [
-    "petzu.in",
-    "www.petzu.in"
+    "3b.kluniversity.in",
+    "admissions.kluniversity.in",
+    "alumni.kluniversity.in",
+    "captiveportal.kluniversity.in",
+    "cpanel.kluniversity.in",
+    "cpcontacts.kluniversity.in",
+    "kluniversity.in",
+    "mqtt.kluniversity.in",
+    "odl1.kluniversity.in",
+    "projects.kluniversity.in",
+    "sac.kluniversity.in",
+    "sacactivities.kluniversity.in",
+    "socialinternship.kluniversity.in",
+    "svr.kluniversity.in",
+    "virtualclass.kluniversity.in",
+    "virtualclass1.kluniversity.in",
+    "virtualclass2.kluniversity.in",
+    "webdisk.kluniversity.in",
+    "wissap24.kluniversity.in",
+    "www.kluniversity.in"
   ],
   "ssl_summary": {
     "reachable": true,
     "expired": false,
-    "valid_from": "Mar  1 11:29:52 2026 GMT",
-    "valid_to": "May 30 11:29:51 2026 GMT",
-    "days_remaining": 87,
+    "valid_from": "Jan  5 00:00:00 2026 GMT",
+    "valid_to": "Feb  5 23:59:59 2027 GMT",
+    "days_remaining": 339,
     "issuer": [
       [
         [
           "countryName",
-          "US"
+          "GB"
         ]
       ],
       [
         [
           "organizationName",
-          "Let's Encrypt"
+          "Sectigo Limited"
         ]
       ],
       [
         [
           "commonName",
-          "R12"
+          "Sectigo Public Server Authentication CA DV R36"
         ]
       ]
     ],
@@ -35,20 +53,19 @@
       [
         [
           "commonName",
-          "petzu.in"
+          "*.kluniversity.in"
         ]
       ]
     ],
-    "tls_version": "TLSv1.3",
-    "cipher": "TLS_AES_128_GCM_SHA256",
+    "tls_version": "TLSv1.2",
+    "cipher": "ECDHE-RSA-AES256-GCM-SHA384",
     "error": null
   },
   "security_headers": {
-    "target_url": "https://petzu.in",
-    "present": {
-      "strict-transport-security": "max-age=63072000"
-    },
+    "target_url": "https://kluniversity.in",
+    "present": {},
     "missing": [
+      "strict-transport-security",
       "content-security-policy",
       "x-content-type-options",
       "x-frame-options",
@@ -58,23 +75,50 @@
     "error": null
   },
   "tech_stack": [
+    "Bootstrap",
     "Cloudflare",
-    "React",
-    "Server: Vercel"
+    "Server: Microsoft-IIS/10.0",
+    "X-Powered-By: ASP.NET"
   ],
   "open_ports": [
     21,
     80,
     443
   ],
+  "attack_surface": {
+    "total_subdomains": 20,
+    "high_risk_subdomains": [],
+    "tls_status": "Valid",
+    "missing_critical_headers": [
+      "strict-transport-security",
+      "content-security-policy",
+      "x-frame-options"
+    ],
+    "sensitive_open_ports": [
+      21
+    ],
+    "tech_stack_summary": [
+      "Bootstrap",
+      "Cloudflare",
+      "Server: Microsoft-IIS/10.0",
+      "X-Powered-By: ASP.NET"
+    ]
+  },
+  "exposure_score": 7,
+  "exposure_level": "Medium",
   "risk_preliminary": {
-    "high": [],
+    "high": [
+      "Sensitive service ports publicly reachable (21) \u2014 direct attack surface for credential brute-force, vulnerability exploitation, and lateral movement."
+    ],
     "medium": [
-      "Uncommon publicly reachable ports detected: 21"
+      "HSTS header absent \u2014 browsers may permit unencrypted HTTP connections, exposing session tokens to network-level interception.",
+      "Content-Security-Policy header absent \u2014 application is unprotected against cross-site scripting (XSS) and content-injection attacks.",
+      "X-Frame-Options header absent \u2014 application may be embeddable in third-party frames, enabling clickjacking attacks against authenticated users."
     ],
     "low": [
-      "TLS endpoint is reachable and certificate details were collected.",
-      "Technology fingerprinting identified 3 indicators."
+      "Valid TLS endpoint reachable. Certificate chain and expiry details collected.",
+      "Technology stack fingerprinted (4 indicators). Public exposure of framework and version information may inform targeted research.",
+      "20 resolvable subdomains discovered. Broad subdomain exposure increases overall attack surface and enumeration potential."
     ]
   }
 }
