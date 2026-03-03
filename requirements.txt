@@ -1,7 +1,9 @@
-aiohttp
 requests
-rich
+openai
+jinja2
+dnspython
 python-dotenv
-jinja2
-reportlab
-jinja2
+# Standard library modules used by this project:
+# ssl
+# socket
+

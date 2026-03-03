@@ -1,0 +1,25 @@
+{
+  "ExecutiveSummary": "Passive external exposure checks were completed successfully. This fallback report was generated because the AI service was unavailable.",
+  "Findings": [
+    {
+      "Issue": "Uncommon publicly reachable ports detected: 21",
+      "Category": "Medium",
+      "Description": "Uncommon publicly reachable ports detected: 21",
+      "Remediation": "Review finding and apply standard hardening controls."
+    },
+    {
+      "Issue": "TLS endpoint is reachable and certificate details were collected.",
+      "Category": "Low",
+      "Description": "TLS endpoint is reachable and certificate details were collected.",
+      "Remediation": "Review finding and apply standard hardening controls."
+    },
+    {
+      "Issue": "Technology fingerprinting identified 3 indicators.",
+      "Category": "Low",
+      "Description": "Technology fingerprinting identified 3 indicators.",
+      "Remediation": "Review finding and apply standard hardening controls."
+    }
+  ],
+  "OverallRisk": "Medium",
+  "GenerationNote": "OPENAI_API_KEY is not configured."
+}

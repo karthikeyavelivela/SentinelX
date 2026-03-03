@@ -1,0 +1,80 @@
+{
+  "domain": "petzu.in",
+  "timestamp": "2026-03-03T13:07:20.208224+00:00",
+  "subdomains": [
+    "petzu.in",
+    "www.petzu.in"
+  ],
+  "ssl_summary": {
+    "reachable": true,
+    "expired": false,
+    "valid_from": "Mar  1 11:29:52 2026 GMT",
+    "valid_to": "May 30 11:29:51 2026 GMT",
+    "days_remaining": 87,
+    "issuer": [
+      [
+        [
+          "countryName",
+          "US"
+        ]
+      ],
+      [
+        [
+          "organizationName",
+          "Let's Encrypt"
+        ]
+      ],
+      [
+        [
+          "commonName",
+          "R12"
+        ]
+      ]
+    ],
+    "subject": [
+      [
+        [
+          "commonName",
+          "petzu.in"
+        ]
+      ]
+    ],
+    "tls_version": "TLSv1.3",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "error": null
+  },
+  "security_headers": {
+    "target_url": "https://petzu.in",
+    "present": {
+      "strict-transport-security": "max-age=63072000"
+    },
+    "missing": [
+      "content-security-policy",
+      "x-content-type-options",
+      "x-frame-options",
+      "referrer-policy",
+      "permissions-policy"
+    ],
+    "error": null
+  },
+  "tech_stack": [
+    "Cloudflare",
+    "React",
+    "Server: Vercel"
+  ],
+  "open_ports": [
+    21,
+    80,
+    443
+  ],
+  "risk_preliminary": {
+    "high": [],
+    "medium": [
+      "Uncommon publicly reachable ports detected: 21"
+    ],
+    "low": [
+      "TLS endpoint is reachable and certificate details were collected.",
+      "Technology fingerprinting identified 3 indicators."
+    ]
+  }
+}
