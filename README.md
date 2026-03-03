@@ -1,271 +1,216 @@
-# SentinelX — Attack Surface Intelligence Platform
+# SentinelX
 
-SentinelX is an automated **Web & Cloud Attack Surface Intelligence Framework** designed to help identify exposed digital assets, analyze security risks, and generate actionable security reports.
-
-The project focuses on **how real-world security tools are engineered**, emphasizing automation, scalability, and maintainable architecture rather than single-script scanning.
-
----
-
-## 🚀 Project Objective
-
-Organizations often suffer breaches not due to advanced exploits, but because of:
-
-* Unknown subdomains
-* Forgotten APIs
-* Public cloud resources
-* Broken access control
-* Misconfigured authentication
-
-SentinelX addresses this problem by continuously discovering external assets, mapping applications and APIs, identifying security exposures, and presenting risks in a structured, professional format.
-
----
-
-## 🧠 What SentinelX Does
-
-SentinelX automates the following security workflows:
-
-* External asset discovery
-* Web and API surface mapping
-* Vulnerability detection
-* Cloud exposure analysis
-* Risk scoring and prioritization
-* Professional security report generation
-
-All modules are executed from a single command-line interface.
-
----
-
-## ⚙️ Tech Stack
-
-### Programming Language
-
-* **Python 3.12**
-
-### Core Libraries
-
-* `asyncio` — asynchronous task execution
-* `aiohttp` — high‑performance HTTP requests
-* `requests` — standard HTTP handling
-* `rich` — terminal UI and formatting
-* `python-dotenv` — environment configuration
-* `jinja2` — report templating
-* `pyfiglet` — CLI banner rendering
-
-### Integrated Security Tools
-
-* Amass — subdomain discovery
-* Subfinder — passive reconnaissance
-* httpx — live host detection
-* Naabu — port scanning
-* Nuclei — template-based vulnerability scanning
-
-### Cloud Platform
-
-* AWS (read‑only analysis using boto3)
-
----
-
-## 🧩 Architecture Overview
-
-```
-Target Domain
-     ↓
-Attack Surface Discovery
-     ↓
-Web & API Enumeration
-     ↓
-Vulnerability Testing
-     ↓
-Cloud Exposure Analysis
-     ↓
-Risk Scoring Engine
-     ↓
-Report Generation
-```
-
-SentinelX follows a **modular plugin-based architecture**, allowing new scanners or integrations to be added without affecting the core engine.
-
----
-
-## 📂 Project Structure
-
-```
-SentinelX/
-│
-├── core/
-│   ├── engine.py          # Async execution engine
-│   ├── config.py          # Configuration loader
-│   └── logger.py          # Central logging system
-│
-├── utils/
-│   ├── banner.py          # CLI branding
-│   └── helpers.py         # Shared utilities
-│
-├── recon/                  # Attack surface discovery modules
-├── web/                    # Web & API enumeration
-├── attacks/                # Vulnerability testing logic
-├── cloud/                  # Cloud security analysis
-├── reporting/              # Report generation
-│
-├── output/                 # Generated scan data (ignored by git)
-├── reports/                # Final security reports
-│
-├── main.py                 # Entry point
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
-
----
-
-## 🧪 Usage
-
-### Basic Scan
+SentinelX is an automated **Attack Surface Intelligence Framework** built as a Python CLI. Point it at a target domain, and it runs a phased pipeline to discover assets, enumerate exposed functionality, test for common weaknesses, score risk, and generate a report.
 
 ```bash
 python main.py -d example.com
 ```
 
-### Deep Scan
+> SentinelX is designed as a learning-focused, production-style AppSec project: modular architecture, repeatable phases, and structured findings.
 
-```bash
-python main.py -d example.com --deep
+---
+
+## What SentinelX does
+
+SentinelX runs a **7-phase pipeline**:
+
+1. **Attack Surface Discovery**
+   - Subdomain enumeration
+   - Live host checks
+   - Port scanning
+   - Technology fingerprinting
+2. **Web & API Enumeration**
+   - HTML crawling
+   - JavaScript endpoint extraction
+   - Endpoint normalization/mapping
+3. **Access Control Testing**
+   - IDOR checks
+   - Auth bypass checks
+   - HTTP method abuse checks
+4. **Injection Testing**
+   - SQLi checks
+   - XSS checks
+   - Open redirect checks
+5. **Security Misconfiguration Testing**
+   - CORS checks
+   - Missing security headers
+   - Debug exposure
+   - Unsafe method exposure
+6. **Risk Scoring**
+   - CVSS-style scoring
+   - Severity mapping
+   - Business impact enrichment
+7. **Report Generation**
+   - HTML report
+   - PDF report
+
+---
+
+## Architecture highlights
+
+- **Modular, plugin-style structure**: each phase is implemented in focused modules.
+- **Async concurrency for recon**: parallel host checks through an async engine and semaphore control.
+- **Fallback-first recon approach**: recon components degrade gracefully when external binaries are missing.
+- **Centralized config**: runtime values (timeouts, concurrency, headers) are loaded from config/env.
+- **Unified finding schema**: downstream risk scoring/reporting consumes standardized findings.
+
+---
+
+## Project structure
+
+```text
+.
+├── main.py
+├── requirements.txt
+├── core/
+│   ├── engine.py
+│   ├── config.py
+│   └── logger.py
+├── recon/
+│   ├── subdomain_enum.py
+│   ├── live_hosts.py
+│   ├── port_scan.py
+│   └── tech_detect.py
+├── web/
+│   ├── crawler.py
+│   ├── js_parser.py
+│   └── api_mapper.py
+├── attacks/
+│   ├── vuln_engine.py
+│   ├── idor.py
+│   ├── auth_bypass.py
+│   ├── method_tester.py
+│   ├── jwt_analyzer.py
+│   ├── injection/
+│   │   ├── engine.py
+│   │   ├── sqli.py
+│   │   ├── xss.py
+│   │   └── open_redirect.py
+│   └── config/
+│       ├── engine.py
+│       ├── cors.py
+│       ├── headers.py
+│       ├── debug.py
+│       └── methods.py
+├── risk/
+│   ├── engine.py
+│   ├── scorer.py
+│   ├── cvss.py
+│   ├── severity.py
+│   └── impact.py
+├── reporting/
+│   ├── report_builder.py
+│   └── templates/
+│       └── report.html
+├── auth/
+│   ├── session.py
+│   └── juice_shop_auth.py
+├── utils/
+│   ├── banner.py
+│   ├── request_utils.py
+│   ├── progress.py
+│   ├── global_progress.py
+│   ├── timer.py
+│   └── helpers.py
+├── output/
+└── reports/
 ```
 
-### Web Only Scan
+---
+
+## Installation
+
+### 1) Clone
 
 ```bash
-python main.py -d example.com --web
+git clone <your-fork-or-repo-url>
+cd SentinelX
 ```
 
-### Cloud Exposure Scan
+### 2) Create environment
 
 ```bash
-python main.py --aws-scan
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-### Generate Report
+### 3) Install dependencies
 
 ```bash
-python main.py -d example.com -o report.html
+pip install -r requirements.txt
 ```
 
----
+### 4) Configure environment (optional but recommended)
 
-## 📊 Output
-
-SentinelX produces structured outputs:
-
-* `assets.json` — discovered domains and services
-* `endpoints.json` — mapped APIs and parameters
-* `vulnerabilities.json` — confirmed findings
-* `risk_report.html / pdf` — final security report
+Create a `.env` file in the repository root for runtime tuning (timeouts, concurrency, user-agent, etc.).
 
 ---
 
-## 🔐 Vulnerabilities Covered
+## Usage
 
-* IDOR (Broken Object Level Authorization)
-* Broken authentication
-* Missing access control
-* JWT misconfigurations
-* CORS misconfiguration
-* Rate‑limit bypass
-* File upload issues
-* Basic SSRF detection
-* Cloud misconfiguration exposure
+Run a full scan:
 
-> SentinelX focuses on **logic-based detection**, not noisy payload fuzzing.
+```bash
+python main.py -d example.com
+```
+
+Notes:
+- If the domain is provided without a scheme, SentinelX prepends `https://`.
+- Outputs are saved as JSON artifacts used by risk scoring and reporting.
 
 ---
 
-## ☁️ Cloud Security Checks (AWS)
+## Output artifacts
 
-* Public S3 buckets
-* Open EC2 security groups
-* Exposed Lambda URLs
-* Hardcoded credentials in JavaScript
-* Over‑permissive IAM policies
+Typical generated files include:
 
-All cloud checks are **read-only and non-destructive**.
+- `assets.json`
+- `endpoints.json`
+- `phase3_access_control.json`
+- `phase4_injection.json`
+- `phase5_misconfiguration.json`
+- `all_findings_raw.json`
+- `risk_scored_findings.json`
 
----
-
-## 🧠 Design Principles
-
-* Modular architecture
-* Asynchronous scanning
-* Minimal false positives
-* Clear risk prioritization
-* Production-style reporting
-* Extendable plugin system
+Reports are generated in HTML/PDF format via the reporting phase.
 
 ---
 
-## 🎯 Intended Users
+## Strengths
 
-* Security engineering students
-* Bug bounty researchers
-* Application security interns
-* Red team trainees
-* DevSecOps learners
+- End-to-end single-command workflow
+- Clear modular layout for extension
+- Async recon improves speed for host checks
+- Professional-style outputs and reporting
+- Built-in risk scoring flow
+- Non-destructive, logic-based checks
 
----
+## Current limitations
 
-## ⚠️ Legal Disclaimer
-
-This project is intended **strictly for educational and authorized security testing purposes**.
-
-You must only scan:
-
-* Assets you own
-* Explicitly authorized targets
-* Local labs and test environments
-
-Unauthorized scanning of systems without permission is illegal.
-
-The author is not responsible for misuse of this tool.
+- CVSS mapping is static and type-based
+- IDOR checks are path-pattern oriented and shallow
+- Auth bypass heuristics can produce false positives
+- Authentication/session handling is limited
+- Phases 3–5 are largely synchronous loops
+- Injection detection depth is intentionally basic
+- No persistence layer for resumable scans
 
 ---
 
-## 🛣️ Roadmap
+## Contributing
 
-* [x] Phase 0 — Core architecture & engine
-* [ ] Phase 1 — Attack surface discovery
-* [ ] Phase 2 — Web & API enumeration
-* [ ] Phase 3 — Vulnerability engine
-* [ ] Phase 4 — Cloud exposure scanner
-* [ ] Phase 5 — Risk scoring
-* [ ] Phase 6 — Report generator
-* [ ] Phase 7 — Blockchain audit ledger (optional)
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, style, testing, and pull request expectations.
 
 ---
 
-## 👤 Author
+## License
 
-**Karthikeya Velivela**
-
-* GitHub: [https://github.com/karthikeyavelivela](https://github.com/karthikeyavelivela)
-* LinkedIn: [https://www.linkedin.com/in/karthikeya-velivela/](https://www.linkedin.com/in/karthikeya-velivela/)
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
 
 ---
 
-## ⭐ Acknowledgements
+## Legal notice
 
-Inspired by modern attack surface management platforms such as:
+Use SentinelX only on systems you own or are explicitly authorized to test.
 
-* ProjectDiscovery
-* Assetnote
-* Chaos
-* Nuclei
-* OWASP Amass
-
----
-
-## 📌 One-Line Summary
-
-> SentinelX is an automated attack surface intelligence framework for discovering external assets, analyzing web and cloud exposures, and generating security risk reports.
-
----
-
-**Built for learning. Designed like real security software.**
+Unauthorized security testing may be illegal. You are responsible for complying with all applicable laws and policies.
