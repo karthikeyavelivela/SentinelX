@@ -1,13 +1,6 @@
-requests
-openai
-jinja2
-dnspython
-python-dotenv
-xhtml2pdf        # Primary PDF engine — pure Python, no system dependencies
-weasyprint       # Fallback PDF engine — requires GTK3 runtime on Windows
-# Standard library modules used by this project:
-# ssl
-# socket
-# hashlib
-# struct
-# base64
+requests==2.32.3
+dnspython==2.7.0
+jinja2==3.1.6
+openai==1.75.0
+weasyprint==65.0
+pyyaml==6.0.2

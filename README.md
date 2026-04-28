@@ -1,16 +1,6 @@
 # SentinelX
 
-**Automated attack surface intelligence. One command. Seven phases. PDF report.**
-
-```bash
-python main.py -d target.com
-```
-
-Point SentinelX at a domain. It enumerates subdomains, crawls endpoints, tests access controls, runs injection checks, scores every finding with CVSS-style severity, and generates a structured HTML/PDF report — without touching anything manually.
-
-Built as a production-style Python CLI for real AppSec workflows, not a toy script.
-
----
+SentinelX is a Python CLI for external exposure intelligence. It performs passive and low-impact reconnaissance against an authorized target domain, then produces structured JSON output and consulting-ready HTML or PDF reporting.
 
 ## What it does
 
@@ -26,55 +16,74 @@ SentinelX runs a sequential 7-phase pipeline:
 | 6 · Risk Scoring | CVSS-style scoring, severity mapping, business impact enrichment |
 | 7 · Report Generation | Structured HTML + PDF output with all findings |
 
-Every finding flows through a unified schema into risk scoring and reporting. One run, one report.
+The project is designed for non-destructive assessment and produces a unified finding schema that flows into risk scoring and reporting.
 
----
+## Supported checks
 
-## Architecture
+- Certificate transparency discovery through crt.sh
+- DNS record collection, including explicit _dmarc.<domain> lookups
+- TLS certificate metadata collection
+- HTTPS response header inspection
+- Lightweight TCP exposure checks on a configurable port list
+- Favicon hashing and scored technology fingerprinting
+- Subdomain takeover heuristics for known dangling CNAME providers
+- Drift tracking across repeated scans for the same domain
+- Deterministic reporting, with explicit opt-in support for OpenAI-assisted narrative generation
 
-```
-SentinelX/
-├── main.py                  # Entry point, pipeline orchestration
-├── core/                    # Engine, config, logger
-├── recon/                   # Subdomain enum, live hosts, port scan, tech detect
-├── web/                     # Crawler, JS parser, API mapper
-├── attacks/
-│   ├── idor.py              # Access control checks
-│   ├── auth_bypass.py
-│   ├── injection/           # SQLi, XSS, open redirect engines
-│   └── config/              # CORS, headers, debug, method checks
-├── risk/                    # CVSS scoring, severity, impact enrichment
-├── reporting/               # HTML/PDF report builder
-└── utils/                   # Request utils, progress, helpers
-```
+## What SentinelX does not do
 
-Design decisions worth noting:
-- **Async recon** — parallel host checks with semaphore control for speed without hammering targets
-- **Fallback-first** — recon degrades gracefully when external binaries (subfinder, httpx) are missing
-- **Unified finding schema** — all phases emit the same structure so risk scoring and reporting are decoupled from detection logic
-- **Centralized config** — timeouts, concurrency, headers all tunable from env/config without touching module code
+- No exploit execution
+- No credential brute force
+- No authenticated application testing
+- No payload-based SQLi, XSS, IDOR, auth bypass, or CORS exploitation logic
 
----
-
-## Quick start
+## Installation
 
 ```bash
-git clone https://github.com/karthikeyavelivela/SentinelX
-cd SentinelX
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python main.py -d target.com
 ```
 
 > Only test domains you own or are explicitly authorized to assess.
 
----
+## Configuration
+
+Default runtime settings live in [config.yaml](config.yaml). You can point SentinelX at an alternate file with --config.
+
+Configurable values include:
+
+- HTTP, DNS, and TCP timeouts
+- TCP port list
+- User-Agent
+- Subdomain data sources
+- Rate limiting delay
+- Retry count
+
+## CLI usage
+
+Basic usage:
+
+```bash
+python main.py example.com
+python main.py -d example.com
+```
+
+Common options:
+
+```bash
+python main.py example.com --no-pdf
+python main.py example.com --config ./config.yaml
+python main.py example.com --baseline
+python main.py example.com --ai openai --allow-external-ai
+```
 
 ## Output
 
-Each run produces JSON artifacts per phase plus a final report:
+Each run produces JSON artifacts plus a final report:
 
-```
+```text
 output/
 ├── assets.json
 ├── endpoints.json
@@ -85,7 +94,7 @@ output/
 └── final_report.html / final_report.pdf
 ```
 
----
+Repeated runs also create per-domain history snapshots under scan_history/<domain>/.
 
 ## Current scope and limitations
 
@@ -97,18 +106,55 @@ SentinelX is built for learning and non-destructive assessment, not adversarial 
 - No persistence layer — scans don't resume
 - Auth handling is limited to session-based flows
 
-Contributions that extend depth without breaking the modular pipeline are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Current architecture
 
----
+- main.py
+  - Parses CLI flags, loads config, runs the scan pipeline, and manages output artifacts.
+- core/scanner.py
+  - Normalizes the target domain and orchestrates collection phases with isolated error handling.
+- core/subdomain.py
+  - Enumerates candidate subdomains and validates them through A, AAAA, or CNAME resolution.
+- core/dns_recon.py
+  - Collects A, MX, TXT, CNAME, SPF, and DMARC data.
+- core/ssl_analysis.py
+  - Pulls external TLS metadata from port 443.
+- core/headers.py
+  - Checks for recommended HTTP security headers without inflating findings on transport failure.
+- core/port_check.py
+  - Performs configurable lightweight TCP exposure checks.
+- core/favicon_hash.py
+  - Fetches and hashes favicons for known fingerprint matching.
+- core/techstack.py
+  - Uses scored signatures with confidence levels for technology inference.
+- core/takeover.py
+  - Flags potential subdomain takeover conditions from dangling CNAME patterns.
+- core/drift_tracker.py
+  - Compares current scan results with the most recent historical snapshot.
+- reporting/formatter.py
+  - Converts collector output into findings, attack-surface summaries, and exposure scoring.
+- reporting/ai_generator.py
+  - Produces deterministic or explicit-opt-in OpenAI-assisted narrative output.
+- reporting/html_renderer.py
+  - Renders the HTML report.
+- reporting/pdf_exporter.py
+  - Converts HTML to PDF and reports whether the result is full, placeholder, or skipped.
 
 ## Built by
 
-[Karthikeya Velivela](https://github.com/karthikeyavelivela) — AppSec Engineer @ PETZU · Active on HackerOne (`karthikeyavelivela`) · B.Tech CSE, KL University '27
+[Karthikeya Velivela](https://github.com/karthikeyavelivela) — AppSec Engineer @ PETZU · Active on HackerOne (karthikeyavelivela) · B.Tech CSE, KL University '27
 
 Also see: [LLM Red Team Framework](https://github.com/karthikeyavelivela/llm-redteam) — automated OWASP LLM Top 10 testing CLI
-
----
 
 ## License
 
 MIT — use it, extend it, don't test systems you don't own.
+
+
+1. Run SentinelX against authorized client scope.
+2. Review `structured_output.json` for findings, drift information, and collection quality.
+3. Deliver `final_report.html` and, when applicable, `final_report.pdf`.
+
+## Legal notice
+
+Use SentinelX only on infrastructure you own or where you have written authorization to assess. Unauthorized testing can violate law and contractual obligations.
+>>>>>>> ff06bdd (chore: remove all historical dead attack modules, align repo to v2 passive recon architecture)
