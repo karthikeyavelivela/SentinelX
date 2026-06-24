@@ -1,216 +1,114 @@
 # SentinelX
 
-SentinelX is an automated **Attack Surface Intelligence Framework** built as a Python CLI. Point it at a target domain, and it runs a phased pipeline to discover assets, enumerate exposed functionality, test for common weaknesses, score risk, and generate a report.
+**Automated attack surface intelligence. One command. Seven phases. PDF report.**
 
 ```bash
-python main.py -d example.com
+python main.py -d target.com
 ```
 
-> SentinelX is designed as a learning-focused, production-style AppSec project: modular architecture, repeatable phases, and structured findings.
+Point SentinelX at a domain. It enumerates subdomains, crawls endpoints, tests access controls, runs injection checks, scores every finding with CVSS-style severity, and generates a structured HTML/PDF report — without touching anything manually.
+
+Built as a production-style Python CLI for real AppSec workflows, not a toy script.
 
 ---
 
-## What SentinelX does
+## What it does
 
-SentinelX runs a **7-phase pipeline**:
+SentinelX runs a sequential 7-phase pipeline:
 
-1. **Attack Surface Discovery**
-   - Subdomain enumeration
-   - Live host checks
-   - Port scanning
-   - Technology fingerprinting
-2. **Web & API Enumeration**
-   - HTML crawling
-   - JavaScript endpoint extraction
-   - Endpoint normalization/mapping
-3. **Access Control Testing**
-   - IDOR checks
-   - Auth bypass checks
-   - HTTP method abuse checks
-4. **Injection Testing**
-   - SQLi checks
-   - XSS checks
-   - Open redirect checks
-5. **Security Misconfiguration Testing**
-   - CORS checks
-   - Missing security headers
-   - Debug exposure
-   - Unsafe method exposure
-6. **Risk Scoring**
-   - CVSS-style scoring
-   - Severity mapping
-   - Business impact enrichment
-7. **Report Generation**
-   - HTML report
-   - PDF report
+| Phase | What it does |
+|---|---|
+| 1 · Attack Surface Discovery | Subdomain enumeration, live host checks, port scanning, tech fingerprinting |
+| 2 · Web & API Enumeration | HTML crawling, JS endpoint extraction, API surface mapping |
+| 3 · Access Control Testing | IDOR checks, auth bypass, HTTP method abuse |
+| 4 · Injection Testing | SQLi, XSS, open redirect detection |
+| 5 · Misconfiguration Testing | CORS, missing security headers, debug exposure, unsafe methods |
+| 6 · Risk Scoring | CVSS-style scoring, severity mapping, business impact enrichment |
+| 7 · Report Generation | Structured HTML + PDF output with all findings |
+
+Every finding flows through a unified schema into risk scoring and reporting. One run, one report.
 
 ---
 
-## Architecture highlights
+## Architecture
 
-- **Modular, plugin-style structure**: each phase is implemented in focused modules.
-- **Async concurrency for recon**: parallel host checks through an async engine and semaphore control.
-- **Fallback-first recon approach**: recon components degrade gracefully when external binaries are missing.
-- **Centralized config**: runtime values (timeouts, concurrency, headers) are loaded from config/env.
-- **Unified finding schema**: downstream risk scoring/reporting consumes standardized findings.
-
----
-
-## Project structure
-
-```text
-.
-├── main.py
-├── requirements.txt
-├── core/
-│   ├── engine.py
-│   ├── config.py
-│   └── logger.py
-├── recon/
-│   ├── subdomain_enum.py
-│   ├── live_hosts.py
-│   ├── port_scan.py
-│   └── tech_detect.py
-├── web/
-│   ├── crawler.py
-│   ├── js_parser.py
-│   └── api_mapper.py
+```
+SentinelX/
+├── main.py                  # Entry point, pipeline orchestration
+├── core/                    # Engine, config, logger
+├── recon/                   # Subdomain enum, live hosts, port scan, tech detect
+├── web/                     # Crawler, JS parser, API mapper
 ├── attacks/
-│   ├── vuln_engine.py
-│   ├── idor.py
+│   ├── idor.py              # Access control checks
 │   ├── auth_bypass.py
-│   ├── method_tester.py
-│   ├── jwt_analyzer.py
-│   ├── injection/
-│   │   ├── engine.py
-│   │   ├── sqli.py
-│   │   ├── xss.py
-│   │   └── open_redirect.py
-│   └── config/
-│       ├── engine.py
-│       ├── cors.py
-│       ├── headers.py
-│       ├── debug.py
-│       └── methods.py
-├── risk/
-│   ├── engine.py
-│   ├── scorer.py
-│   ├── cvss.py
-│   ├── severity.py
-│   └── impact.py
-├── reporting/
-│   ├── report_builder.py
-│   └── templates/
-│       └── report.html
-├── auth/
-│   ├── session.py
-│   └── juice_shop_auth.py
-├── utils/
-│   ├── banner.py
-│   ├── request_utils.py
-│   ├── progress.py
-│   ├── global_progress.py
-│   ├── timer.py
-│   └── helpers.py
-├── output/
-└── reports/
+│   ├── injection/           # SQLi, XSS, open redirect engines
+│   └── config/              # CORS, headers, debug, method checks
+├── risk/                    # CVSS scoring, severity, impact enrichment
+├── reporting/               # HTML/PDF report builder
+└── utils/                   # Request utils, progress, helpers
 ```
+
+Design decisions worth noting:
+- **Async recon** — parallel host checks with semaphore control for speed without hammering targets
+- **Fallback-first** — recon degrades gracefully when external binaries (subfinder, httpx) are missing
+- **Unified finding schema** — all phases emit the same structure so risk scoring and reporting are decoupled from detection logic
+- **Centralized config** — timeouts, concurrency, headers all tunable from env/config without touching module code
 
 ---
 
-## Installation
-
-### 1) Clone
+## Quick start
 
 ```bash
-git clone <your-fork-or-repo-url>
+git clone https://github.com/karthikeyavelivela/SentinelX
 cd SentinelX
-```
-
-### 2) Create environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 3) Install dependencies
-
-```bash
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+python main.py -d target.com
 ```
 
-### 4) Configure environment (optional but recommended)
-
-Create a `.env` file in the repository root for runtime tuning (timeouts, concurrency, user-agent, etc.).
+> Only test domains you own or are explicitly authorized to assess.
 
 ---
 
-## Usage
+## Output
 
-Run a full scan:
+Each run produces JSON artifacts per phase plus a final report:
 
-```bash
-python main.py -d example.com
+```
+output/
+├── assets.json
+├── endpoints.json
+├── phase3_access_control.json
+├── phase4_injection.json
+├── phase5_misconfiguration.json
+├── risk_scored_findings.json
+└── final_report.html / final_report.pdf
 ```
 
-Notes:
-- If the domain is provided without a scheme, SentinelX prepends `https://`.
-- Outputs are saved as JSON artifacts used by risk scoring and reporting.
+---
+
+## Current scope and limitations
+
+SentinelX is built for learning and non-destructive assessment, not adversarial exploitation:
+
+- CVSS mapping is static and type-based (not context-aware)
+- IDOR checks are path-pattern heuristics, not object-level enumeration
+- Injection detection is intentional breadth-first, not depth exploitation
+- No persistence layer — scans don't resume
+- Auth handling is limited to session-based flows
+
+Contributions that extend depth without breaking the modular pipeline are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Output artifacts
+## Built by
 
-Typical generated files include:
+[Karthikeya Velivela](https://github.com/karthikeyavelivela) — AppSec Engineer @ PETZU · Active on HackerOne (`karthikeyavelivela`) · B.Tech CSE, KL University '27
 
-- `assets.json`
-- `endpoints.json`
-- `phase3_access_control.json`
-- `phase4_injection.json`
-- `phase5_misconfiguration.json`
-- `all_findings_raw.json`
-- `risk_scored_findings.json`
-
-Reports are generated in HTML/PDF format via the reporting phase.
-
----
-
-## Strengths
-
-- End-to-end single-command workflow
-- Clear modular layout for extension
-- Async recon improves speed for host checks
-- Professional-style outputs and reporting
-- Built-in risk scoring flow
-- Non-destructive, logic-based checks
-
-## Current limitations
-
-- CVSS mapping is static and type-based
-- IDOR checks are path-pattern oriented and shallow
-- Auth bypass heuristics can produce false positives
-- Authentication/session handling is limited
-- Phases 3–5 are largely synchronous loops
-- Injection detection depth is intentionally basic
-- No persistence layer for resumable scans
-
----
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, style, testing, and pull request expectations.
+Also see: [LLM Red Team Framework](https://github.com/karthikeyavelivela/llm-redteam) — automated OWASP LLM Top 10 testing CLI
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE).
-
----
-
-## Legal notice
-
-Use SentinelX only on systems you own or are explicitly authorized to test.
-
-Unauthorized security testing may be illegal. You are responsible for complying with all applicable laws and policies.
+MIT — use it, extend it, don't test systems you don't own.
