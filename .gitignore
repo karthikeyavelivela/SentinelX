@@ -38,6 +38,7 @@ Thumbs.db
 # =========================
 output/
 reports/
+scan_history/
 *.log
 
 # =========================
@@ -48,6 +49,15 @@ endpoints.json
 vulnerabilities.json
 risk_report.html
 risk_report.pdf
+scan_data.json
+structured_output.json
+ai_report.json
+final_report.html
+final_report.pdf
+final_report.json
+test_output/
+gui_output/
+.sentinelx/
 
 # =========================
 # Temporary / Testing

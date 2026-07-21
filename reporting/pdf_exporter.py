@@ -1,11 +1,4 @@
-"""PDF export module — converts the HTML report to a PDF audit document.
-
-Strategy (in priority order):
-1. xhtml2pdf — pure Python, no system dependencies (preferred on Windows).
-   Pre-processes HTML to resolve CSS custom properties, which xhtml2pdf cannot handle.
-2. WeasyPrint — high-fidelity but requires GTK3 on Windows (fallback).
-3. Skip gracefully with a warning if neither is available.
-"""
+"""PDF export module for SentinelX."""
 
 from __future__ import annotations
 
@@ -15,51 +8,34 @@ from pathlib import Path
 
 LOGGER = logging.getLogger(__name__)
 
-# Map of CSS custom property names → literal hex/rgb values used in the template
 CSS_VAR_MAP: dict[str, str] = {
-    "--brand": "#0f172a",
-    "--brand-light": "#1e293b",
-    "--accent": "#3b82f6",
-    "--accent-muted": "#dbeafe",
-    "--bg": "#f8fafc",
+    "--ink": "#1c2530",
+    "--ink-soft": "#55606d",
+    "--ink-faint": "#8993a0",
+    "--line": "#d6dbe0",
+    "--paper": "#f4f5f3",
     "--card": "#ffffff",
-    "--text": "#0f172a",
-    "--text-muted": "#64748b",
-    "--border": "#e2e8f0",
-    "--high": "#dc2626",
-    "--high-bg": "#fef2f2",
-    "--high-border": "#fecaca",
-    "--medium": "#d97706",
-    "--medium-bg": "#fffbeb",
-    "--medium-border": "#fde68a",
-    "--low": "#16a34a",
-    "--low-bg": "#f0fdf4",
-    "--low-border": "#bbf7d0",
-    "--score-low": "#16a34a",
-    "--score-medium": "#d97706",
-    "--score-high": "#dc2626",
-    "--purple": "#7c3aed",
-    "--purple-bg": "#f5f3ff",
-    "--purple-border": "#ddd6fe",
+    "--accent": "#8a3b1f",
+    "--accent-soft": "#f4e5db",
+    "--critical": "#9c2b2b",
+    "--critical-bg": "#f8e6e2",
+    "--high": "#b5551f",
+    "--high-bg": "#fbeee1",
+    "--medium": "#a9781f",
+    "--medium-bg": "#f8f0d9",
+    "--low": "#2f7a4f",
+    "--low-bg": "#e7f3ea",
 }
 
-# xhtml2pdf-incompatible CSS patterns to strip entirely
 CSS_STRIPLIST: list[str] = [
-    # CSS custom property declarations
     r"--[\w-]+\s*:[^;]+;",
-    # @font-face blocks referencing Google Fonts (causes CSS parse warnings)
     r'@import\s+url\(["\']https://fonts\.googleapis[^)]+\)[^;]*;',
-    # -webkit-font-smoothing
     r"-webkit-font-smoothing\s*:[^;]+;",
-    # transition properties (not supported)
     r"transition\s*:[^;]+;",
-    # scroll-behavior
     r"scroll-behavior\s*:[^;]+;",
-    # letter-spacing (can cause issues in some ReportLab builds)
-    # Keep it — most builds handle it fine
+    r"letter-spacing\s*:[^;]+;",
 ]
 
-# Google Fonts link tags to remove from <head>
 LINK_STRIPLIST: list[str] = [
     r'<link[^>]+fonts\.googleapis\.com[^>]*>',
     r'<link[^>]+fonts\.gstatic\.com[^>]*>',
@@ -67,23 +43,20 @@ LINK_STRIPLIST: list[str] = [
 
 
 def _resolve_css_vars(html: str) -> str:
-    """Replace var(--token) usage with literal values throughout the HTML."""
-    def replacer(match: re.Match) -> str:
+    def replacer(match: re.Match[str]) -> str:
         var_name = match.group(1).strip()
-        fallback = match.group(2)  # group 2 = fallback value after comma, if any
+        fallback = match.group(2)
         literal = CSS_VAR_MAP.get(var_name)
         if literal:
             return literal
         if fallback:
             return fallback.strip()
-        return "#cccccc"  # safe grey for any unknown var
+        return "#cccccc"
 
-    # var(--name) or var(--name, fallback)  — 2 capture groups only
     return re.sub(r"var\(\s*(--[\w-]+)(?:\s*,\s*([^)]+))?\s*\)", replacer, html)
 
 
 def _strip_incompatible_css(html: str) -> str:
-    """Remove / simplify CSS that xhtml2pdf cannot parse."""
     for pattern in CSS_STRIPLIST:
         html = re.sub(pattern, "", html, flags=re.IGNORECASE | re.DOTALL)
     for pattern in LINK_STRIPLIST:
@@ -92,7 +65,6 @@ def _strip_incompatible_css(html: str) -> str:
 
 
 def _add_pdf_base_styles(html: str) -> str:
-    """Inject xhtml2pdf-friendly base font stack after the opening <head> tag."""
     pdf_styles = (
         "<style>"
         "body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #0f172a; background: #f8fafc; }"
@@ -104,10 +76,8 @@ def _add_pdf_base_styles(html: str) -> str:
 
 
 def _preprocess_html_for_xhtml2pdf(html_path: str) -> str:
-    """Read HTML and pre-process it to be xhtml2pdf-compatible."""
-    with open(html_path, "r", encoding="utf-8") as f:
-        html = f.read()
-
+    with open(html_path, "r", encoding="utf-8") as handle:
+        html = handle.read()
     html = _strip_incompatible_css(html)
     html = _resolve_css_vars(html)
     html = _add_pdf_base_styles(html)
@@ -115,7 +85,6 @@ def _preprocess_html_for_xhtml2pdf(html_path: str) -> str:
 
 
 def _export_with_xhtml2pdf(html_path: str, pdf_path: str) -> bool:
-    """Attempt PDF generation via xhtml2pdf (pure Python, no GTK needed)."""
     try:
         from xhtml2pdf import pisa  # noqa: PLC0415
     except ImportError:
@@ -125,7 +94,6 @@ def _export_with_xhtml2pdf(html_path: str, pdf_path: str) -> bool:
     try:
         preprocessed = _preprocess_html_for_xhtml2pdf(html_path)
         html_file = Path(html_path).resolve()
-
         with open(pdf_path, "wb") as dest:
             result = pisa.CreatePDF(
                 preprocessed,
@@ -133,23 +101,15 @@ def _export_with_xhtml2pdf(html_path: str, pdf_path: str) -> bool:
                 encoding="utf-8",
                 base_dir=str(html_file.parent),
             )
-
         if result.err:
             LOGGER.debug("xhtml2pdf reported %d non-fatal warning(s).", result.err)
-
-        if Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 1000:
-            return True
-
-        LOGGER.debug("xhtml2pdf produced an empty/tiny file — skipping.")
-        return False
-
+        return Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 1000
     except Exception as exc:
         LOGGER.warning("xhtml2pdf export failed: %s", exc)
         return False
 
 
 def _export_with_weasyprint(html_path: str, pdf_path: str) -> bool:
-    """Attempt PDF generation via WeasyPrint (requires GTK3 on Windows)."""
     try:
         from weasyprint import HTML as WeasyHTML  # noqa: PLC0415
     except (ImportError, Exception):
@@ -165,31 +125,72 @@ def _export_with_weasyprint(html_path: str, pdf_path: str) -> bool:
         return False
 
 
-def export_pdf(html_path: str, pdf_path: str = "final_report.pdf") -> str | None:
-    """
-    Convert an HTML report file to PDF.
+def _export_with_minimal_placeholder(pdf_path: str) -> bool:
+    try:
+        content = b"%PDF-1.4\n"
+        objects = []
+        offsets = []
 
-    Tries xhtml2pdf first (pure Python, Windows-compatible),
-    then falls back to WeasyPrint. Returns the pdf_path on success, None if both fail.
-    """
+        def add_obj(obj_bytes: bytes) -> None:
+            offsets.append(len(content) + sum(len(item) for item in objects))
+            objects.append(obj_bytes)
+
+        add_obj(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+        add_obj(b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n")
+        add_obj(
+            b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"
+        )
+        stream = b"BT /F1 14 Tf 72 740 Td (SentinelX PDF fallback report generated.) Tj ET"
+        add_obj(
+            b"4 0 obj\n<< /Length "
+            + str(len(stream)).encode("ascii")
+            + b" >>\nstream\n"
+            + stream
+            + b"\nendstream\nendobj\n"
+        )
+        add_obj(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
+
+        body = b"".join(objects)
+        xref_start = len(content) + len(body)
+        xref = [b"xref\n0 6\n0000000000 65535 f \n"]
+        for offset in offsets:
+            xref.append(f"{offset:010d} 00000 n \n".encode("ascii"))
+        trailer = (
+            b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"
+            + str(xref_start).encode("ascii")
+            + b"\n%%EOF\n"
+        )
+        with open(pdf_path, "wb") as handle:
+            handle.write(content + body + b"".join(xref) + trailer)
+        return Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 200
+    except Exception as exc:
+        LOGGER.warning("Minimal PDF placeholder generation failed: %s", exc)
+        return False
+
+
+def export_pdf(html_path: str, pdf_path: str = "final_report.pdf") -> dict[str, str | None]:
+    """Convert an HTML report file to PDF and return structured export metadata."""
     html_file = Path(html_path).resolve()
-
     if not html_file.exists():
-        LOGGER.error("HTML report not found at %s — cannot generate PDF.", html_path)
-        return None
+        LOGGER.error("HTML report not found at %s - cannot generate PDF.", html_path)
+        return {"path": None, "status": "skipped", "engine": "missing_html"}
 
-    LOGGER.info("Exporting PDF: %s → %s", html_path, pdf_path)
+    LOGGER.info("Exporting PDF: %s -> %s", html_path, pdf_path)
 
     if _export_with_xhtml2pdf(html_path, pdf_path):
         LOGGER.info("PDF export successful via xhtml2pdf: %s", pdf_path)
-        return pdf_path
+        return {"path": pdf_path, "status": "full_pdf", "engine": "xhtml2pdf"}
 
     LOGGER.info("Trying WeasyPrint as fallback...")
     if _export_with_weasyprint(html_path, pdf_path):
         LOGGER.info("PDF export successful via WeasyPrint: %s", pdf_path)
-        return pdf_path
+        return {"path": pdf_path, "status": "full_pdf", "engine": "weasyprint"}
 
-    LOGGER.warning(
-        "PDF export failed. Install xhtml2pdf: pip install xhtml2pdf"
-    )
-    return None
+    LOGGER.info("Trying minimal PDF placeholder fallback...")
+    if _export_with_minimal_placeholder(pdf_path):
+        LOGGER.info("PDF placeholder generated: %s", pdf_path)
+        return {"path": pdf_path, "status": "placeholder_pdf", "engine": "placeholder"}
+
+    LOGGER.warning("PDF export failed. Install xhtml2pdf or WeasyPrint for a full export.")
+    return {"path": None, "status": "skipped", "engine": "unavailable"}

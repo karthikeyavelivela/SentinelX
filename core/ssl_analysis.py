@@ -11,7 +11,7 @@ from typing import Any
 LOGGER = logging.getLogger(__name__)
 
 
-def analyze_ssl(domain: str, timeout: int = 6) -> dict[str, Any]:
+def analyze_ssl(domain: str, *, timeout: int = 6) -> dict[str, Any]:
     """Collect certificate and TLS details from port 443 without intrusive activity."""
     result: dict[str, Any] = {
         "reachable": False,
@@ -56,4 +56,3 @@ def analyze_ssl(domain: str, timeout: int = 6) -> dict[str, Any]:
         result["error"] = str(exc)
 
     return result
-

@@ -1,575 +1,635 @@
-"""Structured output formatter, Exposure Score engine, risk classification, OWASP mapping."""
+"""Structured output formatter for SentinelX reports."""
 
 from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 LOGGER = logging.getLogger(__name__)
 
-SCANNER_VERSION = "1.2.0"
-
-COMMON_WEB_PORTS: set[int] = {80, 443, 8080, 8443}
 SENSITIVE_PORTS: set[int] = {21, 22, 23, 25, 3306, 3389, 5432, 5900, 6379, 27017}
-
-STAGING_KEYWORDS = ("staging", "stage", "dev", "test", "uat", "preprod")
-HIGH_RISK_PATTERNS = (
-    "dev", "staging", "test", "beta", "admin", "api", "internal",
-    "preprod", "uat", "mgmt", "management", "staff", "secret",
+HIGH_RISK_PATTERNS: tuple[str, ...] = (
+    "dev",
+    "staging",
+    "test",
+    "beta",
+    "admin",
+    "api",
+    "internal",
+    "preprod",
+    "uat",
+    "mgmt",
+    "management",
+    "staff",
+    "secret",
 )
 
-CRITICAL_HEADERS = (
-    "strict-transport-security",
-    "content-security-policy",
-    "x-frame-options",
-)
-
-# ---------------------------------------------------------------------------
-# OWASP Top 10 (2021) Mapping
-# ---------------------------------------------------------------------------
-
-OWASP_CATEGORIES: dict[str, str] = {
-    "A01": "A01:2021 – Broken Access Control",
-    "A02": "A02:2021 – Cryptographic Failures",
-    "A03": "A03:2021 – Injection",
-    "A04": "A04:2021 – Insecure Design",
-    "A05": "A05:2021 – Security Misconfiguration",
-    "A06": "A06:2021 – Vulnerable and Outdated Components",
-    "A07": "A07:2021 – Identification and Authentication Failures",
-    "A08": "A08:2021 – Software and Data Integrity Failures",
-    "A09": "A09:2021 – Security Logging and Monitoring Failures",
-    "A10": "A10:2021 – Server-Side Request Forgery (SSRF)",
+OWASP_MAP: dict[str, str] = {
+    "tls": "A02:2021 - Cryptographic Failures",
+    "header": "A05:2021 - Security Misconfiguration",
+    "port": "A05:2021 - Security Misconfiguration",
+    "subdomain": "A05:2021 - Security Misconfiguration",
+    "email": "A05:2021 - Security Misconfiguration",
 }
 
-# Finding keyword → OWASP category mapping
-FINDING_OWASP_MAP: list[tuple[str, str, str]] = [
-    # (keyword_in_finding, owasp_code, brief_rationale)
-    ("ssl", "A02", "Cryptographic failure — weak/expired TLS exposes data in transit"),
-    ("tls", "A02", "Cryptographic failure — outdated TLS protocol enables downgrade attacks"),
-    ("certificate", "A02", "Certificate misconfiguration undermines transport-layer trust"),
-    ("hsts", "A02", "Missing HSTS enables protocol downgrade, exposing encrypted sessions"),
-    ("content-security-policy", "A05", "Absent CSP constitutes security misconfiguration enabling XSS"),
-    ("csp", "A05", "Missing Content-Security-Policy — security misconfiguration"),
-    ("x-frame-options", "A05", "Missing framing protection — clickjacking via misconfiguration"),
-    ("x-content-type", "A05", "Missing MIME-type protection — security misconfiguration"),
-    ("referrer-policy", "A05", "Missing referrer policy — information leakage misconfiguration"),
-    ("permissions-policy", "A05", "Uncontrolled browser feature access — security misconfiguration"),
-    ("port 21", "A05", "Publicly exposed FTP — misconfigured network attack surface"),
-    ("port 22", "A05", "Publicly exposed SSH — misconfigured network attack surface"),
-    ("port 3389", "A05", "Publicly exposed RDP — critical misconfiguration"),
-    ("port 3306", "A05", "Publicly exposed database — security misconfiguration"),
-    ("ftp", "A05", "FTP protocol exposure — security misconfiguration"),
-    ("rdp", "A05", "Remote Desktop Protocol exposure — security misconfiguration"),
-    ("mysql", "A05", "Database service publicly exposed — security misconfiguration"),
-    ("redis", "A05", "Redis exposed publicly — misconfigured data store"),
-    ("mongodb", "A05", "MongoDB exposed publicly — misconfigured data store"),
-    ("elasticsearch", "A05", "Elasticsearch exposed publicly — misconfigured search engine"),
-    ("staging", "A04", "Pre-production environment exposed — insecure design"),
-    ("dev", "A04", "Development environment publicly accessible — insecure design"),
-    ("admin", "A01", "Administrative interface exposed — broken access control"),
-    ("internal", "A01", "Internal API or system accessible externally — broken access control"),
-    ("api", "A05", "API endpoint publicly enumerable — potential misconfiguration"),
-    ("subdomain", "A05", "Broad subdomain exposure — attack surface misconfiguration"),
-    ("technology", "A06", "Technology fingerprinting — potential vulnerable/outdated components"),
-    ("wordpress", "A06", "WordPress installation detected — verify for outdated plugins/core"),
-    ("drupal", "A06", "Drupal installation detected — verify for outdated modules"),
-    ("shopify", "A04", "E-commerce platform detected — verify secure design of checkout flow"),
-]
+REMEDIATION_MAP: dict[str, str] = {
+    "strict-transport-security": "Set HSTS with a long max-age and includeSubDomains once HTTPS is consistent.",
+    "content-security-policy": "Set a restrictive Content-Security-Policy and remove weak directives.",
+    "x-frame-options": "Set X-Frame-Options to DENY or SAMEORIGIN.",
+    "x-content-type-options": "Set X-Content-Type-Options to nosniff.",
+    "referrer-policy": "Set Referrer-Policy to strict-origin-when-cross-origin or no-referrer.",
+    "permissions-policy": "Disable browser capabilities that the application does not require.",
+    "cross-origin-opener-policy": "Set Cross-Origin-Opener-Policy to same-origin where compatible.",
+    "cross-origin-resource-policy": "Set Cross-Origin-Resource-Policy to same-site or same-origin where compatible.",
+    "x-dns-prefetch-control": "Set X-DNS-Prefetch-Control to off on sensitive applications.",
+}
+
+BUSINESS_IMPACT_MAP: dict[str, str] = {
+    "headers": (
+        "Raises the odds that a client-side attack against site visitors succeeds — "
+        "clickjacking, MIME-sniffing abuse, or injected script running in a real user's browser."
+    ),
+    "ports": (
+        "A reachable database or admin service is one weak credential or unpatched CVE away "
+        "from full compromise of that system and anything it can reach."
+    ),
+    "subdomains": (
+        "The hostname signals a lower-security environment (dev, staging, admin) that is "
+        "statistically more likely to run outdated software or skip production hardening."
+    ),
+    "takeover": (
+        "Whoever claims the dangling DNS record can serve arbitrary content, including a "
+        "phishing page, under the organization's own trusted domain name."
+    ),
+    "dns": (
+        "Weak sender validation lets outside parties send convincing spoofed email as the "
+        "organization, landing phishing directly in employee or customer inboxes."
+    ),
+    "ssl": (
+        "Certificate or transport weaknesses erode the encrypted-connection guarantee visitors "
+        "rely on, and can trigger browser warnings that block access or damage trust outright."
+    ),
+    "general": "Expands the attack surface an outside party can use as a starting point.",
+}
+
+ATTACK_PATH_MAP: dict[str, list[str]] = {
+    "headers": [
+        "Visitor's browser loads the page without the missing protection",
+        "Attacker delivers a crafted page, script, or frame to that visitor",
+        "The missing header fails to block the technique",
+        "The browser executes or renders the attacker's content",
+        "Session hijack, credential theft, or defacement follows",
+    ],
+    "ports": [
+        "External port scan finds the service reachable from the internet",
+        "Attacker fingerprints the service and its version",
+        "Default credentials, a known CVE, or brute force is attempted",
+        "The service is compromised or its data is exfiltrated directly",
+        "Lateral movement into connected internal systems follows",
+    ],
+    "subdomains": [
+        "Passive enumeration surfaces the high-risk hostname",
+        "Attacker treats it as a lower-priority, weaker-controlled target",
+        "Directory brute force or default-credential attempts follow",
+        "Any exposed panel or API on that host becomes an entry point",
+        "The foothold expands toward the primary production environment",
+    ],
+    "takeover": [
+        "The DNS record still points at a decommissioned third-party service",
+        "Attacker registers the same name on that provider",
+        "The subdomain now resolves attacker-controlled content under a trusted domain",
+        "Content is used for phishing, credential harvesting, or malware hosting",
+        "Brand trust and any cookies scoped to the parent domain are abused",
+    ],
+    "dns": [
+        "Attacker crafts an email using the organization's domain as the sender",
+        "The SPF/DMARC gap fails to flag or quarantine it",
+        "The message lands in the inbox looking legitimate",
+        "The recipient trusts the sender and acts on the message",
+        "Credential theft, wire fraud, or malware delivery follows",
+    ],
+    "ssl": [
+        "The certificate expires or a transport weakness is identified",
+        "Browsers begin warning visitors or blocking the connection outright",
+        "Traffic becomes more susceptible to interception on hostile networks",
+        "Sensitive form data is exposed in transit",
+        "Trust in the site and its data handling is damaged",
+    ],
+    "general": [
+        "Exposure is observed in the external scan output",
+        "Attacker prioritizes the issue for further probing",
+        "The weak control is targeted directly",
+        "Access or misuse becomes possible",
+        "Business impact follows",
+    ],
+}
 
 
-def map_finding_to_owasp(finding_text: str) -> dict[str, str]:
-    """Return the best OWASP Top 10 category match for a finding string."""
-    text_lower = finding_text.lower()
-    for keyword, code, rationale in FINDING_OWASP_MAP:
-        if keyword in text_lower:
-            return {
-                "code": code,
-                "category": OWASP_CATEGORIES.get(code, code),
-                "rationale": rationale,
-            }
-    # Default to Security Misconfiguration as the most common passive finding category
+def _module_ok(data_quality: dict[str, Any], module_name: str) -> bool:
+    entry = data_quality.get(module_name, {})
+    return bool(entry.get("success"))
+
+
+def _severity_to_cvss(severity: str) -> float:
     return {
-        "code": "A05",
-        "category": OWASP_CATEGORIES["A05"],
-        "rationale": "External exposure indicator consistent with security misconfiguration",
+        "Critical": 9.5,
+        "High": 8.0,
+        "Medium": 6.0,
+        "Low": 3.0,
+    }.get(severity, 5.0)
+
+
+def _finding_module(title: str) -> str:
+    lowered = title.lower()
+    if "header" in lowered:
+        return "headers"
+    if "port" in lowered:
+        return "ports"
+    if "spf" in lowered or "dmarc" in lowered:
+        return "dns"
+    if "takeover" in lowered:
+        return "takeover"
+    if "tls" in lowered or "certificate" in lowered:
+        return "ssl"
+    if "subdomain" in lowered:
+        return "subdomains"
+    return "general"
+
+
+def _make_finding(
+    idx: int,
+    *,
+    title: str,
+    severity: str,
+    description: str,
+    evidence: str,
+    owasp_category: str,
+    remediation: str,
+    affected_asset: str,
+) -> dict[str, Any]:
+    module = _finding_module(title)
+    finding = {
+        "id": f"F-{idx:03d}",
+        "title": title,
+        "severity": severity,
+        "cvss_score": _severity_to_cvss(severity),
+        "description": description,
+        "evidence": evidence,
+        "owasp_category": owasp_category,
+        "remediation": remediation,
+        "affected_asset": affected_asset,
+        "module": module,
+        "business_impact": BUSINESS_IMPACT_MAP.get(module, BUSINESS_IMPACT_MAP["general"]),
+        "attack_path": ATTACK_PATH_MAP.get(module, ATTACK_PATH_MAP["general"]),
+    }
+    return {
+        "id": str(finding.get("id", f"F-{idx:03d}")),
+        "title": str(finding.get("title", "Untitled finding")),
+        "severity": str(finding.get("severity", "Low")),
+        "cvss_score": float(finding.get("cvss_score", 3.0)),
+        "description": str(finding.get("description", "No description provided.")),
+        "evidence": str(finding.get("evidence", "No evidence captured.")),
+        "owasp_category": str(finding.get("owasp_category", "A05:2021 - Security Misconfiguration")),
+        "remediation": str(finding.get("remediation", "Review and harden this exposure.")),
+        "affected_asset": str(finding.get("affected_asset", "Unknown")),
+        "module": str(finding.get("module", "general")),
+        "business_impact": str(finding.get("business_impact", BUSINESS_IMPACT_MAP["general"])),
+        "attack_path": list(finding.get("attack_path", ATTACK_PATH_MAP["general"])),
     }
 
 
-# ---------------------------------------------------------------------------
-# Attack Path Builder
-# ---------------------------------------------------------------------------
+def _build_findings(scan_data: dict[str, Any]) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    data_quality = scan_data.get("data_quality", {})
+    domain = scan_data.get("domain", "unknown")
 
-ATTACK_PATHS: list[tuple[str, list[str]]] = [
-    (
-        "hsts",
-        [
-            "Missing HSTS Header",
-            "HTTP Downgrade Attack Initiated",
-            "Session Cookie Intercepted over HTTP",
-            "Authenticated Session Hijacked",
-            "Full Account Takeover — User Data Accessed",
-        ],
-    ),
-    (
-        "content-security-policy",
-        [
-            "Missing Content-Security-Policy",
-            "Malicious Script Injected via XSS",
-            "User Browser Executes Attacker Code",
-            "Session Token / Credentials Exfiltrated",
-            "Account Compromised — Data Breach Risk",
-        ],
-    ),
-    (
-        "x-frame-options",
-        [
-            "Missing X-Frame-Options",
-            "Application Embedded in Attacker-Controlled iFrame",
-            "Clickjacking UI Overlay Constructed",
-            "User Performs Authenticated Action Unknowingly",
-            "Funds Transfer / Data Modification Executed",
-        ],
-    ),
-    (
-        "ssl",
-        [
-            "Expired / Invalid TLS Certificate",
-            "MITM Proxy Positioned Between Client and Server",
-            "Encrypted Session Decrypted by Attacker",
-            "Credentials and Session Tokens Captured",
-            "Customer Account Credentials Harvested at Scale",
-        ],
-    ),
-    (
-        "port 3389",
-        [
-            "RDP Port 3389 Publicly Exposed",
-            "Automated Credential Brute-Force Scan Hits Endpoint",
-            "Valid Credential Pair Discovered",
-            "Attacker Establishes Remote Desktop Session",
-            "Lateral Movement / Ransomware Deployment",
-        ],
-    ),
-    (
-        "port 22",
-        [
-            "SSH Port 22 Publicly Exposed",
-            "Passive Recon Identifies SSH Service Version",
-            "Credential Stuffing / Key Brute-Force Attempted",
-            "Shell Access Gained",
-            "Data Exfiltration or Persistent Backdoor Installed",
-        ],
-    ),
-    (
-        "port 3306",
-        [
-            "MySQL Port 3306 Publicly Reachable",
-            "Database Version Fingerprinted Passively",
-            "Known CVE or Credential Attack Launched",
-            "SQL Shell or Direct DB Access Obtained",
-            "Full Customer Dataset Exfiltrated",
-        ],
-    ),
-    (
-        "redis",
-        [
-            "Redis Port 6379 Publicly Exposed (No Auth by Default)",
-            "Attacker Connects Directly to Redis Instance",
-            "Cache Data, Session Tokens Dumped",
-            "Arbitrary Command Execution via CONFIG SET",
-            "Host Server Compromised via Cron / SSH Key Injection",
-        ],
-    ),
-    (
-        "staging",
-        [
-            "Staging / Pre-Production Environment Exposed",
-            "Weaker Auth Controls or Debug Features Active",
-            "Attacker Extracts Internal API Structure / Test Credentials",
-            "Test Credentials Reused on Production Systems",
-            "Production Environment Compromised",
-        ],
-    ),
-    (
-        "admin",
-        [
-            "Administrative Interface Publicly Accessible",
-            "Login Endpoint Exposed to Internet",
-            "Credential Brute-Force / Phishing Attack Targeted",
-            "Administrative Access Gained",
-            "Full Application / Infrastructure Takeover",
-        ],
-    ),
-    (
-        "technology",
-        [
-            "Technology Stack Fingerprinted (Framework / Version Detected)",
-            "Attacker Researches Known CVEs for Identified Version",
-            "Exploit Code Sourced from Public Repositories",
-            "Remote Code Execution Attempted",
-            "Server Compromised — Arbitrary Command Execution",
-        ],
-    ),
-    (
-        "subdomain",
-        [
-            "High-Risk Subdomain Publicly Enumerable",
-            "Internal API / Pre-Production System Identified",
-            "Sensitive Configuration or Credentials Discovered",
-            "Lateral Access to Production Adjacent Systems",
-            "Data Exfiltration or Supply-Chain Attack Initiated",
-        ],
-    ),
-]
+    ssl_data = scan_data.get("ssl", {})
+    if _module_ok(data_quality, "ssl") and ssl_data.get("reachable") and ssl_data.get("expired"):
+        findings.append(
+            _make_finding(
+                len(findings) + 1,
+                title="TLS Certificate Expired",
+                severity="High",
+                description="The TLS certificate is expired and browsers may block or distrust the site.",
+                evidence=f"valid_to={ssl_data.get('valid_to')}",
+                owasp_category=OWASP_MAP["tls"],
+                remediation="Renew the certificate and enable automated renewal before it expires again.",
+                affected_asset=domain,
+            )
+        )
 
+    if _module_ok(data_quality, "headers"):
+        for row in scan_data.get("headers", {}).get("headers", []):
+            if not isinstance(row, dict):
+                continue
+            status = str(row.get("status", "UNKNOWN")).upper()
+            if status not in {"FAIL", "WARN"}:
+                continue
+            findings.append(
+                _make_finding(
+                    len(findings) + 1,
+                    title=f"{'Missing' if status == 'FAIL' else 'Weak'} Security Header: {row.get('name')}",
+                    severity="Medium" if status == "FAIL" else "Low",
+                    description=str(row.get("note", "Security header weakness detected.")),
+                    evidence=f"target_url={scan_data.get('headers', {}).get('target_url', f'https://{domain}')}",
+                    owasp_category=OWASP_MAP["header"],
+                    remediation=REMEDIATION_MAP.get(
+                        str(row.get("name", "")).lower(),
+                        str(row.get("recommendation", "Add this header in web server or gateway configuration.")),
+                    ),
+                    affected_asset=domain,
+                )
+            )
 
-def build_attack_path_for_finding(finding_text: str) -> list[str] | None:
-    """Return an ordered attack chain list for the given finding text."""
-    text_lower = finding_text.lower()
-    for keyword, path in ATTACK_PATHS:
-        if keyword.lower() in text_lower:
-            return path
-    # Generic fallback
-    return [
-        "External Exposure Signal Identified",
-        "Passive Reconnaissance Incorporates Finding into Target Dossier",
-        "Targeted Attack or Exploit Developed",
-        "Vulnerability Leveraged for Initial Access",
-        "Data Breach, Service Disruption, or Lateral Movement",
-    ]
+    ports = scan_data.get("ports", [])
+    if _module_ok(data_quality, "ports"):
+        for port in sorted(item for item in ports if item in SENSITIVE_PORTS):
+            findings.append(
+                _make_finding(
+                    len(findings) + 1,
+                    title=f"Sensitive Port Exposed: {port}",
+                    severity="High",
+                    description=f"Service on TCP {port} is reachable from the public internet.",
+                    evidence=f"open_port={port}",
+                    owasp_category=OWASP_MAP["port"],
+                    remediation="Restrict this port at firewall or security-group level to trusted source ranges only.",
+                    affected_asset=domain,
+                )
+            )
+
+    if _module_ok(data_quality, "subdomains"):
+        for host in scan_data.get("subdomains", []):
+            labels = str(host).lower().split(".")
+            if any(label in HIGH_RISK_PATTERNS for label in labels):
+                findings.append(
+                    _make_finding(
+                        len(findings) + 1,
+                        title="High-Risk Subdomain Naming Pattern",
+                        severity="Medium",
+                        description="The hostname suggests admin, staging, development, or internal functionality.",
+                        evidence=f"subdomain={host}",
+                        owasp_category=OWASP_MAP["subdomain"],
+                        remediation="Review whether this subdomain should be public. Restrict or remove it if not needed.",
+                        affected_asset=host,
+                    )
+                )
+
+    if _module_ok(data_quality, "takeover"):
+        for item in scan_data.get("takeover_findings", []):
+            subdomain = str(item.get("subdomain", "unknown"))
+            confidence = str(item.get("confidence", "medium")).lower()
+            severity = "High" if confidence == "high" else "Medium"
+            fingerprint = item.get("fingerprint_matched") or "Known vulnerable service CNAME pattern"
+            findings.append(
+                _make_finding(
+                    len(findings) + 1,
+                    title=f"Potential Subdomain Takeover: {subdomain}",
+                    severity=severity,
+                    description="The subdomain points to a third-party service pattern associated with dangling DNS risk.",
+                    evidence=f"service={item.get('service')} fingerprint={fingerprint}",
+                    owasp_category=OWASP_MAP["subdomain"],
+                    remediation="Confirm ownership at the provider or remove the stale DNS record.",
+                    affected_asset=subdomain,
+                )
+            )
+
+    if _module_ok(data_quality, "dns"):
+        dns_data = scan_data.get("dns", {})
+        spf_analysis = dns_data.get("spf_analysis", {})
+        dmarc_analysis = dns_data.get("dmarc_analysis", {})
+
+        if spf_analysis.get("severity") in {"High", "Medium"}:
+            findings.append(
+                _make_finding(
+                    len(findings) + 1,
+                    title=f"SPF Posture: {spf_analysis.get('status', 'unknown')}",
+                    severity=str(spf_analysis.get("severity", "Medium")),
+                    description=str(spf_analysis.get("summary", "SPF review recommended.")),
+                    evidence=f"spf_record={dns_data.get('spf_record') or 'not_found'}",
+                    owasp_category=OWASP_MAP["email"],
+                    remediation=str(spf_analysis.get("recommendation", "Review and harden SPF.")),
+                    affected_asset=domain,
+                )
+            )
+
+        if dmarc_analysis.get("severity") in {"High", "Medium"}:
+            findings.append(
+                _make_finding(
+                    len(findings) + 1,
+                    title=f"DMARC Posture: {dmarc_analysis.get('status', 'unknown')}",
+                    severity=str(dmarc_analysis.get("severity", "Medium")),
+                    description=str(dmarc_analysis.get("summary", "DMARC review recommended.")),
+                    evidence=f"dmarc_record={dns_data.get('dmarc_record') or 'not_found'}",
+                    owasp_category=OWASP_MAP["email"],
+                    remediation=str(dmarc_analysis.get("recommendation", "Review and harden DMARC.")),
+                    affected_asset=domain,
+                )
+            )
+
+    return findings
 
 
-# ---------------------------------------------------------------------------
-# Exposure Score Engine
-# ---------------------------------------------------------------------------
-
-EXPOSURE_SCORE_METHODOLOGY = {
-    "description": (
-        "The Exposure Score is a 1–10 composite metric representing the organisation's "
-        "external attack surface as observed from a fully passive reconnaissance perspective. "
-        "Higher scores indicate broader, more exploitable exposure."
-    ),
-    "scoring_factors": [
-        {
-            "factor": "Expired TLS Certificate",
-            "points": "+2",
-            "rationale": "An expired certificate disables transport security warnings and signals operational neglect.",
-        },
-        {
-            "factor": "High-Risk Pattern Subdomains Detected",
-            "points": "+2",
-            "rationale": "Subdomains matching patterns such as 'dev', 'admin', 'staging' indicate pre-production or privileged surfaces.",
-        },
-        {
-            "factor": "Sensitive Ports Publicly Reachable",
-            "points": "+2",
-            "rationale": "Ports such as 22 (SSH), 3306 (MySQL), 3389 (RDP) present direct attack vectors for credential attacks.",
-        },
-        {
-            "factor": "Missing HSTS Header",
-            "points": "+1",
-            "rationale": "Absence of Strict-Transport-Security enables protocol downgrade and session interception.",
-        },
-        {
-            "factor": "Missing Content-Security-Policy",
-            "points": "+1",
-            "rationale": "Absence of CSP leaves the application unprotected against cross-site scripting injection.",
-        },
-        {
-            "factor": "Missing X-Frame-Options",
-            "points": "+1",
-            "rationale": "Without frame protection, authenticated interfaces are vulnerable to clickjacking.",
-        },
-        {
-            "factor": "Large Subdomain Attack Surface (>5 hosts)",
-            "points": "+1",
-            "rationale": "A broad subdomain footprint increases enumeration potential and the probability of a misconfigured host.",
-        },
-    ],
-    "thresholds": {
-        "Low (1–3)": "Minimal observable exposure. Basic hygiene controls appear to be in place.",
-        "Medium (4–7)": "Moderate exposure. Several risk indicators present; structured remediation recommended within 60 days.",
-        "High (8–10)": "Significant external exposure. Immediate prioritised remediation required.",
-    },
-    "baseline": 1,
-    "maximum": 10,
-}
+def _risk_buckets(findings: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    buckets: dict[str, list[dict[str, Any]]] = {"critical": [], "high": [], "medium": [], "low": []}
+    for finding in findings:
+        severity = finding["severity"].lower()
+        key = severity if severity in buckets else "low"
+        buckets[key].append(
+            {
+                "text": finding["title"],
+                "business_impact": finding.get("business_impact", BUSINESS_IMPACT_MAP["general"]),
+                "attack_path": finding.get("attack_path", ATTACK_PATH_MAP["general"]),
+            }
+        )
+    return buckets
 
 
-def compute_exposure_score(
-    ssl_summary: dict[str, Any],
-    subdomains: list[str],
-    open_ports: list[int],
-    missing_headers: list[str],
-) -> tuple[int, str]:
-    """Compute a 1-10 Exposure Score and return (score, level)."""
-    score = 1
+def _compute_exposure_score(scan_data: dict[str, Any], findings: list[dict[str, Any]]) -> tuple[int, str]:
+    severity_weights = {"Critical": 22, "High": 14, "Medium": 8, "Low": 3}
+    score = sum(severity_weights.get(str(item.get("severity")), 0) for item in findings)
 
-    if ssl_summary.get("expired") is True:
-        score += 2
+    if len(scan_data.get("subdomains", [])) >= 10:
+        score += 6
+    if len(scan_data.get("ports", [])) >= 3:
+        score += 8
+    if scan_data.get("dns", {}).get("dmarc_analysis", {}).get("status") == "missing":
+        score += 8
+    if scan_data.get("dns", {}).get("spf_analysis", {}).get("status") in {"missing", "neutral"}:
+        score += 8
 
-    pattern_hosts = _flag_pattern_subdomains(subdomains)
-    if pattern_hosts:
-        score += 2
-
-    sensitive_open = [p for p in open_ports if p in SENSITIVE_PORTS]
-    if sensitive_open:
-        score += 2
-
-    missing_lower = [h.lower() for h in missing_headers]
-    for header in CRITICAL_HEADERS:
-        if header in missing_lower:
-            score += 1
-
-    if len(subdomains) > 5:
-        score += 1
-
-    score = min(score, 10)
-
-    if score <= 3:
-        level = "Low"
-    elif score <= 7:
+    score = min(score, 100)
+    if score >= 75:
+        level = "Critical"
+    elif score >= 50:
+        level = "High"
+    elif score >= 25:
         level = "Medium"
     else:
-        level = "High"
-
+        level = "Low"
     return score, level
 
 
-# ---------------------------------------------------------------------------
-# Pattern Subdomain Detection
-# ---------------------------------------------------------------------------
+def _build_completeness_note(data_quality: dict[str, Any]) -> str:
+    total = len(data_quality)
+    failed = sum(1 for _, item in data_quality.items() if item.get("status") == "failed")
+    skipped = sum(1 for _, item in data_quality.items() if item.get("status") == "skipped")
+    if failed == 0 and skipped == 0:
+        return "All collection modules completed successfully."
+    notes: list[str] = []
+    if failed:
+        notes.append(f"{failed} module(s) returned partial data")
+    if skipped:
+        notes.append(f"{skipped} module(s) were skipped by scope")
+    return ", ".join(notes) + ". Exposure scoring may understate risk."
 
-def _flag_pattern_subdomains(subdomains: list[str]) -> list[str]:
-    """Return subdomains matching high-risk naming patterns."""
-    flagged: list[str] = []
-    for host in subdomains:
-        labels = host.lower().split(".")
-        if any(label in HIGH_RISK_PATTERNS for label in labels):
-            flagged.append(host)
-    return flagged
+
+def _severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
+    for item in findings:
+        severity = str(item.get("severity", "Low"))
+        counts[severity] = counts.get(severity, 0) + 1
+    return counts
 
 
-# ---------------------------------------------------------------------------
-# Attack Surface Summary
-# ---------------------------------------------------------------------------
+def _build_module_sections(scan_data: dict[str, Any], findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped_findings: dict[str, list[dict[str, Any]]] = {}
+    for finding in findings:
+        grouped_findings.setdefault(str(finding.get("module", "general")), []).append(finding)
 
-def build_attack_surface(
-    subdomains: list[str],
-    ssl_summary: dict[str, Any],
-    security_headers: dict[str, Any],
-    open_ports: list[int],
-    tech_stack: list[str],
-) -> dict[str, Any]:
-    """Build the structured Attack Surface Overview block."""
-    missing_headers: list[str] = security_headers.get("missing", [])
-    critical_missing = [
-        h for h in missing_headers if h.lower() in CRITICAL_HEADERS
+    headers_rows = scan_data.get("headers", {}).get("headers", [])
+    dns_data = scan_data.get("dns", {})
+    return [
+        {
+            "module": "dns",
+            "title": "DNS and Email Authentication",
+            "summary": "Mail safety controls, DNS records, and spoofing posture.",
+            "findings": grouped_findings.get("dns", []),
+            "details": {
+                "a_records": dns_data.get("a_records", []),
+                "mx_records": dns_data.get("mx_records", []),
+                "spf_record": dns_data.get("spf_record"),
+                "dmarc_record": dns_data.get("dmarc_record"),
+            },
+        },
+        {
+            "module": "headers",
+            "title": "Security Headers",
+            "summary": "Browser-side protections visible on the public web response.",
+            "findings": grouped_findings.get("headers", []),
+            "details": {"headers": headers_rows},
+        },
+        {
+            "module": "ssl",
+            "title": "TLS and Certificate",
+            "summary": "External encryption posture for the main site.",
+            "findings": grouped_findings.get("ssl", []),
+            "details": scan_data.get("ssl", {}),
+        },
+        {
+            "module": "subdomains",
+            "title": "Subdomains",
+            "summary": "Publicly discoverable hostnames and naming risk.",
+            "findings": grouped_findings.get("subdomains", []),
+            "details": {"subdomains": scan_data.get("subdomains", [])},
+        },
+        {
+            "module": "ports",
+            "title": "Open Ports",
+            "summary": "Network services reachable from the internet.",
+            "findings": grouped_findings.get("ports", []),
+            "details": {"ports": scan_data.get("ports", [])},
+        },
+        {
+            "module": "takeover",
+            "title": "Subdomain Takeover Signals",
+            "summary": "Third-party hostname mappings that may be reclaimable.",
+            "findings": grouped_findings.get("takeover", []),
+            "details": {"takeover_findings": scan_data.get("takeover_findings", [])},
+        },
     ]
-    pattern_hosts = _flag_pattern_subdomains(subdomains)
-    sensitive_open = [p for p in open_ports if p in SENSITIVE_PORTS]
-
-    tls_status: str
-    if not ssl_summary.get("reachable"):
-        tls_status = "Unreachable"
-    elif ssl_summary.get("expired"):
-        tls_status = "Expired"
-    elif ssl_summary.get("tls_version") in ("TLSv1", "TLSv1.1", "SSLv3"):
-        tls_status = "Weak"
-    else:
-        tls_status = "Valid"
-
-    return {
-        "total_subdomains": len(subdomains),
-        "high_risk_subdomains": pattern_hosts,
-        "tls_status": tls_status,
-        "missing_critical_headers": critical_missing,
-        "sensitive_open_ports": sensitive_open,
-        "tech_stack_summary": tech_stack,
-    }
 
 
-# ---------------------------------------------------------------------------
-# Preliminary Risk Buckets with OWASP Mapping
-# ---------------------------------------------------------------------------
-
-def build_risk_preliminary(scan_data: dict[str, Any]) -> dict[str, Any]:
-    """Create contextual risk buckets enriched with business language and OWASP categories."""
-    high: list[dict[str, str]] = []
-    medium: list[dict[str, str]] = []
-    low: list[dict[str, str]] = []
-
-    ssl_summary = scan_data.get("ssl_summary", {})
-    security_headers = scan_data.get("security_headers", {})
-    subdomains = scan_data.get("subdomains", [])
-    open_ports = scan_data.get("open_ports", [])
-    tech_stack = scan_data.get("tech_stack", [])
-
-    def _finding(text: str) -> dict[str, str]:
-        owasp = map_finding_to_owasp(text)
-        attack_path = build_attack_path_for_finding(text)
-        return {
-            "text": text,
-            "owasp_code": owasp["code"],
-            "owasp_category": owasp["category"],
-            "owasp_rationale": owasp["rationale"],
-            "attack_path": attack_path,
-        }
-
-    if ssl_summary.get("expired") is True:
-        high.append(_finding(
-            "Expired SSL/TLS certificate — HTTPS connections will display browser security warnings, "
-            "eroding user trust and enabling potential interception."
-        ))
-
-    sensitive_open = [p for p in open_ports if p in SENSITIVE_PORTS]
-    if sensitive_open:
-        port_list = ", ".join(str(p) for p in sensitive_open)
-        high.append(_finding(
-            f"Sensitive service ports publicly reachable ({port_list}) — direct attack surface for "
-            "credential brute-force, vulnerability exploitation, and lateral movement."
-        ))
-
-    missing: list[str] = security_headers.get("missing", [])
-    missing_lower = [h.lower() for h in missing]
-
-    if "strict-transport-security" in missing_lower:
-        medium.append(_finding(
-            "HSTS header absent — browsers may permit unencrypted HTTP connections, exposing "
-            "session tokens to network-level interception."
-        ))
-    if "content-security-policy" in missing_lower:
-        medium.append(_finding(
-            "Content-Security-Policy header absent — application is unprotected against cross-site "
-            "scripting (XSS) and content-injection attacks."
-        ))
-    if "x-frame-options" in missing_lower:
-        medium.append(_finding(
-            "X-Frame-Options header absent — application may be embeddable in third-party frames, "
-            "enabling clickjacking attacks against authenticated users."
-        ))
-
-    pattern_hosts = _flag_pattern_subdomains(subdomains)
-    if pattern_hosts:
-        host_list = ", ".join(pattern_hosts[:5])
-        ellipsis = f" (+{len(pattern_hosts) - 5} more)" if len(pattern_hosts) > 5 else ""
-        medium.append(_finding(
-            f"High-risk pattern subdomains publicly reachable: {host_list}{ellipsis} — these hosts "
-            "commonly expose pre-production builds, administrative panels, or internal APIs "
-            "with weaker security controls."
-        ))
-
-    uncommon = [p for p in open_ports if p not in COMMON_WEB_PORTS and p not in SENSITIVE_PORTS]
-    if uncommon:
-        port_list = ", ".join(str(p) for p in uncommon)
-        medium.append(_finding(
-            f"Non-standard ports publicly reachable ({port_list}) — service identification and "
-            "version-probing by external parties is feasible via passive observation."
-        ))
-
-    if ssl_summary.get("reachable") is True and not ssl_summary.get("expired"):
-        low.append(_finding("Valid TLS endpoint reachable. Certificate chain and expiry details collected."))
-    if tech_stack:
-        low.append(_finding(
-            f"Technology stack fingerprinted ({len(tech_stack)} indicators). "
-            "Public exposure of framework and version information may inform targeted research."
-        ))
-    if len(subdomains) > 5:
-        low.append(_finding(
-            f"{len(subdomains)} resolvable subdomains discovered. Broad subdomain exposure increases "
-            "overall attack surface and enumeration potential."
-        ))
-    if not medium and not high:
-        low.append(_finding(
-            "No immediate high-confidence risk indicators identified from passive observation. "
-            "Continued monitoring is recommended."
-        ))
-
-    return {"high": high, "medium": medium, "low": low}
-
-
-# ---------------------------------------------------------------------------
-# Assessment Metadata
-# ---------------------------------------------------------------------------
-
-def build_assessment_metadata(
+def _plain_english_summary(
     domain: str,
-    timestamp: str,
-    analyst_name: str,
-    assessment_type: str,
-    scanner_version: str,
-) -> dict[str, str]:
-    """Build the Assessment Metadata block for report header."""
-    return {
-        "assessment_type": assessment_type,
-        "scope": f"External passive reconnaissance of {domain} and its publicly observable subdomain infrastructure",
-        "timestamp": timestamp,
-        "scanner_version": scanner_version,
-        "analyst_name": analyst_name,
-        "methodology": (
-            "Passive external reconnaissance only. All data collected from publicly accessible sources "
-            "including: HTTPS certificate inspection, HTTP response header analysis, DNS record enumeration, "
-            "certificate transparency log queries (crt.sh), favicon hash fingerprinting, and TCP port probing "
-            "of well-known service ports. No authentication, exploitation, or active intrusive testing "
-            "was performed at any stage."
+    severity_counts: dict[str, int],
+    total_findings: int,
+    subdomain_count: int,
+) -> str:
+    critical = severity_counts.get("Critical", 0)
+    high = severity_counts.get("High", 0)
+    medium = severity_counts.get("Medium", 0)
+
+    if total_findings == 0:
+        return (
+            f"This scan of {domain} did not surface any exposure worth flagging from the outside. "
+            f"That covers {subdomain_count} discovered subdomain(s) — keep an eye on it with periodic re-scans."
+        )
+
+    if critical or high:
+        urgent = critical + high
+        return (
+            f"This scan of {domain} found {urgent} issue(s) rated high or critical, out of "
+            f"{total_findings} total, across {subdomain_count} discovered subdomain(s). "
+            "These are the exposures a real attacker would try first — fix those before anything else on this list."
+        )
+
+    if medium:
+        return (
+            f"This scan of {domain} found {total_findings} issue(s), the most severe rated medium, "
+            f"across {subdomain_count} discovered subdomain(s). Nothing here is an immediate emergency, "
+            "but each item narrows the gap an attacker needs."
+        )
+
+    return (
+        f"This scan of {domain} found {total_findings} low-severity issue(s) across {subdomain_count} "
+        "discovered subdomain(s) — minor hardening gaps rather than active exposure."
+    )
+
+
+def _closing_line(analyst_email: str | None) -> str:
+    if analyst_email:
+        return f"Questions or remediation support: {analyst_email}"
+    return "Contact the assessing analyst for remediation support and a follow-up re-scan."
+
+
+def _build_executive_summary(
+    scan_data: dict[str, Any],
+    findings: list[dict[str, Any]],
+    exposure_score: int,
+    exposure_level: str,
+) -> dict[str, Any]:
+    severity_counts = _severity_counts(findings)
+    urgent = sorted(
+        findings,
+        key=lambda item: (
+            {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}.get(str(item.get("severity")), 4),
+            str(item.get("title", "")),
         ),
+    )[:3]
+    top_fixes = [
+        {
+            "finding": item["title"],
+            "fix": item["remediation"],
+            "severity": item["severity"],
+            "business_impact": item["business_impact"],
+        }
+        for item in urgent
+    ]
+    domain = scan_data.get("domain", "unknown")
+    return {
+        "title": "EXECUTIVE SUMMARY",
+        "domain": domain,
+        "scan_date": str(scan_data.get("scan_start_time", scan_data.get("scan_timestamp", "")))[:10],
+        "overall_risk_score": exposure_score,
+        "overall_risk_level": exposure_level.upper(),
+        "critical_findings": severity_counts.get("Critical", 0),
+        "high_findings": severity_counts.get("High", 0),
+        "subdomains_discovered": len(scan_data.get("subdomains", [])),
+        "open_ports": len(scan_data.get("ports", [])),
+        "plain_english_summary": _plain_english_summary(domain, severity_counts, len(findings), len(scan_data.get("subdomains", []))),
+        "top_urgent_findings": top_fixes,
+        "top_business_impact": (
+            top_fixes[0]["business_impact"]
+            if top_fixes
+            else "No significant business impact identified from this scan."
+        ),
+        "closing_line": _closing_line(scan_data.get("analyst_email")),
     }
 
-
-# ---------------------------------------------------------------------------
-# Main Output Builder
-# ---------------------------------------------------------------------------
 
 def build_structured_output(scan_data: dict[str, Any]) -> dict[str, Any]:
-    """Build the complete structured JSON payload with Exposure Score and all new metadata."""
-    subdomains: list[str] = scan_data.get("subdomains", [])
-    ssl_summary: dict[str, Any] = scan_data.get("ssl_summary", {})
-    security_headers: dict[str, Any] = scan_data.get("security_headers", {})
-    open_ports: list[int] = scan_data.get("open_ports", [])
-    tech_stack: list[str] = scan_data.get("tech_stack", [])
-    dns_records: dict[str, Any] = scan_data.get("dns_records", {})
-    favicon_fp: dict[str, Any] = scan_data.get("favicon_fingerprint", {})
-    analyst_name: str = scan_data.get("analyst_name", "SentinelX Automated Engine")
-    assessment_type: str = scan_data.get("assessment_type", "External Passive Reconnaissance")
-    scanner_version: str = scan_data.get("scanner_version", SCANNER_VERSION)
-    timestamp: str = scan_data.get("timestamp", datetime.now(timezone.utc).isoformat())
-    domain: str = scan_data.get("domain", "unknown")
-
-    missing_headers: list[str] = security_headers.get("missing", [])
-    attack_surface = build_attack_surface(
-        subdomains, ssl_summary, security_headers, open_ports, tech_stack
-    )
-    exposure_score, exposure_level = compute_exposure_score(
-        ssl_summary, subdomains, open_ports, missing_headers
-    )
-    risk_preliminary = build_risk_preliminary(scan_data)
-    assessment_metadata = build_assessment_metadata(
-        domain, timestamp, analyst_name, assessment_type, scanner_version
-    )
+    """Build normalized structured output for downstream reporting."""
+    findings = _build_findings(scan_data)
+    data_quality = scan_data.get("data_quality", {})
+    exposure_score, exposure_level = _compute_exposure_score(scan_data, findings)
+    risk_preliminary = _risk_buckets(findings)
+    severity_counts = _severity_counts(findings)
 
     return {
-        "domain": domain,
-        "timestamp": timestamp,
-        "assessment_metadata": assessment_metadata,
-        "subdomains": subdomains,
-        "ssl_summary": ssl_summary,
-        "security_headers": security_headers,
-        "tech_stack": tech_stack,
-        "open_ports": open_ports,
-        "dns_records": dns_records,
-        "favicon_fingerprint": favicon_fp,
-        "attack_surface": attack_surface,
+        "domain": scan_data.get("domain", "unknown"),
+        "scan_timestamp": scan_data.get("scan_timestamp"),
+        "scan_start_time": scan_data.get("scan_start_time"),
+        "assessment_metadata": {
+            "assessment_type": scan_data.get("assessment_type", "External Passive Reconnaissance"),
+            "timestamp": scan_data.get("scan_timestamp"),
+            "scan_start_time": scan_data.get("scan_start_time"),
+            "analyst_name": scan_data.get("analyst_name", "SentinelX Automated Engine"),
+            "analyst_email": scan_data.get("analyst_email"),
+            "scanner_version": scan_data.get("scanner_version", "2.1.0"),
+            "scope": str(scan_data.get("scope", "standard")),
+            "methodology": (
+                "DNS, TLS metadata, certificate transparency, passive email control review, "
+                "HTTP response header checks, lightweight TCP port probing, and subdomain takeover heuristics."
+            ),
+            "pdf_status": "pending",
+            "pdf_engine": "pending",
+        },
+        "subdomains": scan_data.get("subdomains", []),
+        "ssl": scan_data.get("ssl", {}),
+        "headers": scan_data.get("headers", {}),
+        "ports": scan_data.get("ports", []),
+        "favicon": scan_data.get("favicon", {}),
+        "techstack": scan_data.get("techstack", []),
+        "dns": scan_data.get("dns", {}),
+        "takeover_findings": scan_data.get("takeover_findings", []),
+        "phase_timings": scan_data.get("phase_timings", {}),
+        "scan_duration_seconds": scan_data.get("scan_duration_seconds", 0.0),
+        "data_quality": data_quality,
+        "completeness_note": _build_completeness_note(data_quality),
+        "findings": findings,
+        "findings_table": [
+            {
+                "severity": item["severity"],
+                "finding": item["title"],
+                "module": item["module"],
+                "business_impact": item["business_impact"],
+                "recommendation": item["remediation"],
+            }
+            for item in findings
+        ],
+        "severity_counts": severity_counts,
+        "risk_preliminary": risk_preliminary,
         "exposure_score": exposure_score,
         "exposure_level": exposure_level,
-        "exposure_score_methodology": EXPOSURE_SCORE_METHODOLOGY,
-        "risk_preliminary": risk_preliminary,
+        "executive_summary": _build_executive_summary(scan_data, findings, exposure_score, exposure_level),
+        "attack_surface": {
+            "total_subdomains": len(scan_data.get("subdomains", [])),
+            "high_risk_subdomains": [
+                host
+                for host in scan_data.get("subdomains", [])
+                if any(label in HIGH_RISK_PATTERNS for label in str(host).lower().split("."))
+            ],
+            "tls_status": (
+                "Unreachable"
+                if not scan_data.get("ssl", {}).get("reachable")
+                else "Expired"
+                if scan_data.get("ssl", {}).get("expired")
+                else "Valid"
+            ),
+            "sensitive_open_ports": [port for port in scan_data.get("ports", []) if port in SENSITIVE_PORTS],
+            "tech_stack_summary": [
+                f"{item.get('name')} ({item.get('confidence')})"
+                if isinstance(item, dict)
+                else str(item)
+                for item in scan_data.get("techstack", [])
+            ],
+            "takeover_candidates": scan_data.get("takeover_findings", []),
+        },
+        "module_sections": _build_module_sections(scan_data, findings),
+        "exposure_score_methodology": {
+            "description": "Exposure score is based on confirmed findings, exposed services, and email control weaknesses.",
+            "minimum": 0,
+            "maximum": 100,
+        },
     }
 
 
 def save_json(data: dict[str, Any], path: str) -> None:
     """Write JSON to disk with stable formatting."""
-    with open(path, "w", encoding="utf-8") as file:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
-    LOGGER.info("Saved JSON output to %s", path)
+    LOGGER.info("Saved JSON output to %s", output_path)

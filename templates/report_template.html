@@ -1,1940 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SentinelX Exposure Report — {{ domain }}</title>
-  <meta name="description" content="External Exposure Intelligence Report for {{ domain }} — SentinelX v1.2">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>SentinelX Report | {{ domain }}</title>
   <style>
-    /* ===== DESIGN TOKENS ===== */
     :root {
-      --brand: #0f172a;
-      --brand-light: #1e293b;
-      --accent: #3b82f6;
-      --accent-muted: #dbeafe;
-      --bg: #f8fafc;
+      --ink: #1c2530;
+      --ink-soft: #55606d;
+      --ink-faint: #8993a0;
+      --line: #d6dbe0;
+      --paper: #f4f5f3;
       --card: #ffffff;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --high: #dc2626;
-      --high-bg: #fef2f2;
-      --high-border: #fecaca;
-      --medium: #d97706;
-      --medium-bg: #fffbeb;
-      --medium-border: #fde68a;
-      --low: #16a34a;
-      --low-bg: #f0fdf4;
-      --low-border: #bbf7d0;
-      --score-low: #16a34a;
-      --score-medium: #d97706;
-      --score-high: #dc2626;
-      --purple: #7c3aed;
-      --purple-bg: #f5f3ff;
-      --purple-border: #ddd6fe;
+      --accent: #8a3b1f;
+      --accent-soft: #f4e5db;
+      --critical: #9c2b2b;
+      --critical-bg: #f8e6e2;
+      --high: #b5551f;
+      --high-bg: #fbeee1;
+      --medium: #a9781f;
+      --medium-bg: #f8f0d9;
+      --low: #2f7a4f;
+      --low-bg: #e7f3ea;
     }
-
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
+    @page {
+      margin: 18mm 14mm 22mm 14mm;
     }
-
-    html {
-      font-size: 16px;
-      scroll-behavior: smooth
-    }
-
+    * { box-sizing: border-box; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 15px;
-      line-height: 1.65;
-      -webkit-font-smoothing: antialiased
+      margin: 0;
+      font-family: Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 12.5px;
+      line-height: 1.6;
     }
-
-    /* ===== HEADER ===== */
-    .page-header {
-      background: var(--brand);
-      color: #fff;
-      padding: 0;
-      border-bottom: 3px solid var(--accent)
-    }
-
-    .header-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 36px 32px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 24px
-    }
-
-    .header-brand {
-      display: flex;
-      align-items: center;
-      gap: 14px
-    }
-
-    .header-logo {
-      width: 44px;
-      height: 44px;
-      background: var(--accent);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-size: 20px;
+    h1, h2, h3, h4 {
+      font-family: Georgia, 'Times New Roman', serif;
       font-weight: 700;
-      letter-spacing: -1px;
-      color: #fff
+      margin: 0;
     }
-
-    .header-title h1 {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.4px;
-      color: #fff;
-      line-height: 1.2
+    .footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      color: var(--ink-faint);
+      padding: 6px 0;
+      border-top: 1px solid var(--line);
+      background: rgba(244, 245, 243, 0.94);
     }
-
-    .header-title p {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-top: 2px
+    .page {
+      padding: 20px 22px 34px;
     }
-
-    .header-meta {
-      text-align: right
-    }
-
-    .header-meta .domain-tag {
-      background: rgba(59, 130, 246, .15);
-      border: 1px solid rgba(59, 130, 246, .3);
-      color: #93c5fd;
-      border-radius: 6px;
-      padding: 4px 12px;
-      font-size: 13px;
-      font-weight: 500;
-      font-family: 'Courier New', monospace
-    }
-
-    .header-meta .report-date {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 8px
-    }
-
-    /* ===== LAYOUT ===== */
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 32px 32px 64px
-    }
-
-    /* ===== CARDS ===== */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 24px;
-      overflow: hidden
-    }
-
-    .card-header {
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between
-    }
-
-    .card-header h2 {
-      font-size: 14px;
-      font-weight: 600;
+    .kicker {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--text-muted)
+      color: var(--accent);
+      margin-bottom: 6px;
     }
 
-    .card-body {
-      padding: 24px
-    }
-
-    /* ===== ASSESSMENT METADATA ===== */
-    .metadata-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden
-    }
-
-    .metadata-row {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      background: var(--card)
-    }
-
-    .metadata-row:last-child {
-      border-bottom: none
-    }
-
-    .metadata-key {
-      padding: 12px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--text-muted);
-      background: #f8fafc;
-      min-width: 160px;
-      border-right: 1px solid var(--border);
-      flex-shrink: 0
-    }
-
-    .metadata-val {
-      padding: 12px 16px;
-      font-size: 13px;
-      color: var(--text);
-      line-height: 1.5;
-      flex: 1
-    }
-
-    .metadata-val.mono {
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      color: #0369a1
-    }
-
-    /* ===== EXPOSURE SCORE ===== */
-    .score-section {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 32px;
-      align-items: start
-    }
-
-    .score-dial {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
+    /* ---- cover ---- */
+    .cover {
+      min-height: 95vh;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+    }
+    .cover-top {
+      background: var(--ink);
+      color: #f4f5f3;
+      padding: 34px 30px 40px;
+    }
+    .cover-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .monogram {
+      width: 56px;
+      height: 56px;
+      background: var(--accent);
+      color: #fff;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-weight: 700;
+      font-size: 26px;
+      display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      border: 4px solid transparent;
-      position: relative
+      border-radius: 3px;
+      flex: none;
     }
-
-    .score-dial.level-low {
-      background: var(--low-bg);
-      border-color: var(--score-low);
-      box-shadow: 0 0 0 6px rgba(22, 163, 74, .08)
+    .cover-top .kicker { color: #d9b79c; }
+    .cover-title h1 {
+      font-size: 34px;
+      line-height: 1.15;
+      color: #fdfaf7;
+      margin: 4px 0 10px;
     }
-
-    .score-dial.level-medium {
-      background: var(--medium-bg);
-      border-color: var(--score-medium);
-      box-shadow: 0 0 0 6px rgba(217, 119, 6, .08)
+    .cover-title p {
+      margin: 0;
+      max-width: 440px;
+      color: rgba(244, 245, 243, 0.78);
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 13.5px;
     }
-
-    .score-dial.level-high {
-      background: var(--high-bg);
-      border-color: var(--score-high);
-      box-shadow: 0 0 0 6px rgba(220, 38, 38, .08)
-    }
-
-    .score-number {
-      font-size: 42px;
+    .risk-badge {
+      flex: none;
+      padding: 14px 20px;
+      border-radius: 3px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 24px;
       font-weight: 700;
-      line-height: 1;
-      letter-spacing: -2px
+      background: #fdfaf7;
+      color: var(--ink);
+      min-width: 150px;
+      text-align: center;
+      line-height: 1.3;
     }
-
-    .score-dial.level-low .score-number {
-      color: var(--score-low)
-    }
-
-    .score-dial.level-medium .score-number {
-      color: var(--score-medium)
-    }
-
-    .score-dial.level-high .score-number {
-      color: var(--score-high)
-    }
-
-    .score-label {
+    .risk-badge span {
+      display: block;
       font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin-top: 2px
+      letter-spacing: 0.1em;
+      margin-top: 2px;
     }
-
-    .score-dial.level-low .score-label {
-      color: var(--score-low)
+    .risk-badge.Critical { color: var(--critical); }
+    .risk-badge.High { color: var(--high); }
+    .risk-badge.Medium { color: var(--medium); }
+    .risk-badge.Low { color: var(--low); }
+    .cover-bottom {
+      background: #eceeec;
+      padding: 26px 30px;
+      border-bottom: 3px solid var(--ink);
     }
-
-    .score-dial.level-medium .score-label {
-      color: var(--score-medium)
-    }
-
-    .score-dial.level-high .score-label {
-      color: var(--score-high)
-    }
-
-    .score-info h3 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -.5px;
-      margin-bottom: 6px
-    }
-
-    .score-info p {
-      color: var(--text-muted);
-      font-size: 14px;
-      max-width: 560px
-    }
-
-    .score-bar-container {
-      margin-top: 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px
-    }
-
-    .score-bar-track {
-      flex: 1;
-      height: 8px;
-      background: var(--border);
-      border-radius: 99px;
-      overflow: hidden
-    }
-
-    .score-bar-fill {
-      height: 100%;
-      border-radius: 99px
-    }
-
-    .score-bar-fill.level-low {
-      background: var(--score-low)
-    }
-
-    .score-bar-fill.level-medium {
-      background: var(--score-medium)
-    }
-
-    .score-bar-fill.level-high {
-      background: var(--score-high)
-    }
-
-    .score-bar-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      white-space: nowrap
-    }
-
-    /* ===== METHODOLOGY PANEL ===== */
-    .methodology-panel {
-      margin-top: 24px;
-      border-top: 1px solid var(--border);
-      padding-top: 20px
-    }
-
-    .methodology-panel h4 {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--text-muted);
-      margin-bottom: 12px
-    }
-
-    .methodology-panel p {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 16px
-    }
-
-    .scoring-factors {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 10px
-    }
-
-    .scoring-factor {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start
-    }
-
-    .factor-points {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--high);
-      flex-shrink: 0;
-      min-width: 28px
-    }
-
-    .factor-name {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 2px
-    }
-
-    .factor-rationale {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.4
-    }
-
-    .methodology-thresholds {
+    .cover-meta {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 14px
+      gap: 0;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
     }
-
-    .threshold-card {
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-size: 12px
+    .cover-meta .meta-card {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+      background: var(--card);
     }
-
-    .threshold-card.low {
-      background: var(--low-bg);
-      border: 1px solid var(--low-border);
-      color: var(--low)
-    }
-
-    .threshold-card.medium {
-      background: var(--medium-bg);
-      border: 1px solid var(--medium-border);
-      color: var(--medium)
-    }
-
-    .threshold-card.high {
-      background: var(--high-bg);
-      border: 1px solid var(--high-border);
-      color: var(--high)
-    }
-
-    .threshold-label {
-      font-weight: 700;
-      margin-bottom: 4px
-    }
-
-    .threshold-desc {
-      font-size: 11px;
-      opacity: .85;
-      line-height: 1.4
-    }
-
-    /* ===== ATTACK SURFACE GRID ===== */
-    .surface-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px
-    }
-
-    .surface-stat {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px
-    }
-
-    .surface-stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -1px;
-      line-height: 1;
-      margin-bottom: 4px
-    }
-
-    .surface-stat-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-weight: 500
-    }
-
-    .surface-stat.warn .surface-stat-value {
-      color: var(--medium)
-    }
-
-    .surface-stat.danger .surface-stat-value {
-      color: var(--high)
-    }
-
-    .surface-stat.ok .surface-stat-value {
-      color: var(--low)
-    }
-
-    .tls-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 99px;
-      font-size: 13px;
-      font-weight: 600
-    }
-
-    .tls-badge.valid {
-      background: var(--low-bg);
-      color: var(--low)
-    }
-
-    .tls-badge.expired {
-      background: var(--high-bg);
-      color: var(--high)
-    }
-
-    .tls-badge.weak {
-      background: var(--medium-bg);
-      color: var(--medium)
-    }
-
-    .tls-badge.unreachable {
-      background: #f1f5f9;
-      color: var(--text-muted)
-    }
-
-    /* ===== RISK DISTRIBUTION ===== */
-    .risk-dist {
-      display: flex;
-      flex-direction: column;
-      gap: 12px
-    }
-
-    .risk-row {
-      display: flex;
-      align-items: center;
-      gap: 12px
-    }
-
-    .risk-row-label {
-      width: 70px;
-      font-size: 13px;
-      font-weight: 600
-    }
-
-    .risk-row-label.high {
-      color: var(--high)
-    }
-
-    .risk-row-label.medium {
-      color: var(--medium)
-    }
-
-    .risk-row-label.low {
-      color: var(--low)
-    }
-
-    .risk-bar-track {
-      flex: 1;
-      height: 24px;
-      background: var(--bg);
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid var(--border)
-    }
-
-    .risk-bar-fill {
-      height: 100%;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      padding-left: 10px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #fff;
-      min-width: 36px
-    }
-
-    .risk-bar-fill.high {
-      background: var(--high)
-    }
-
-    .risk-bar-fill.medium {
-      background: var(--medium)
-    }
-
-    .risk-bar-fill.low {
-      background: var(--low)
-    }
-
-    .risk-count {
-      width: 32px;
-      text-align: right;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-muted)
-    }
-
-    /* ===== EXECUTIVE SUMMARY ===== */
-    .posture-block {
-      font-size: 16px;
-      line-height: 1.75;
-      color: var(--text);
-      margin-bottom: 24px
-    }
-
-    .top-risks {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px
-    }
-
-    .top-risk-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px
-    }
-
-    .top-risk-card h4 {
-      font-size: 11px;
-      font-weight: 600;
+    .meta-label {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--text-muted);
-      margin-bottom: 8px
+      color: var(--ink-faint);
+      margin-bottom: 5px;
+    }
+    .meta-value {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      font-weight: 700;
     }
 
-    .top-risk-card p {
-      font-size: 14px;
-      color: var(--text);
-      line-height: 1.5
+    /* ---- sections ---- */
+    .section {
+      margin-bottom: 22px;
+      padding-top: 14px;
+      border-top: 2px solid var(--ink);
+    }
+    .section h2 {
+      font-size: 19px;
+      margin: 0 0 4px;
+    }
+    .section > .kicker { margin-bottom: 8px; }
+    .section h3 {
+      font-size: 13.5px;
+      margin: 16px 0 8px;
+    }
+    p { margin: 0 0 10px; }
+
+    .lede {
+      font-size: 13.5px;
+      max-width: 74ch;
+      color: var(--ink-soft);
     }
 
-    .next-step-block {
-      background: var(--accent-muted);
-      border: 1px solid #bfdbfe;
-      border-radius: 10px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px
-    }
-
-    .next-step-icon {
-      font-size: 18px;
-      flex-shrink: 0;
-      margin-top: 1px
-    }
-
-    .next-step-block p {
-      font-size: 14px;
-      color: #1e40af;
-      line-height: 1.5
-    }
-
-    .passive-statement {
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--text-muted);
-      padding: 12px 16px;
+    .impact-callout {
       border-left: 3px solid var(--accent);
-      background: var(--bg);
-      border-radius: 0 6px 6px 0
-    }
-
-    /* ===== FINDING BLOCKS ===== */
-    .finding-block {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 20px;
-      overflow: hidden
-    }
-
-    .finding-header {
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      border-bottom: 1px solid var(--border)
-    }
-
-    .finding-header.high {
-      background: var(--high-bg);
-      border-bottom-color: var(--high-border)
-    }
-
-    .finding-header.medium {
-      background: var(--medium-bg);
-      border-bottom-color: var(--medium-border)
-    }
-
-    .finding-header.low {
-      background: var(--low-bg);
-      border-bottom-color: var(--low-border)
-    }
-
-    .finding-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1
-    }
-
-    .finding-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text)
-    }
-
-    .finding-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0
-    }
-
-    .risk-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 3px 10px;
-      border-radius: 99px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      flex-shrink: 0
-    }
-
-    .risk-pill.high {
-      background: var(--high);
-      color: #fff
-    }
-
-    .risk-pill.medium {
-      background: var(--medium);
-      color: #fff
-    }
-
-    .risk-pill.low {
-      background: var(--low);
-      color: #fff
-    }
-
-    .owasp-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 3px 10px;
-      border-radius: 99px;
-      font-size: 10px;
-      font-weight: 600;
-      background: var(--purple-bg);
-      color: var(--purple);
-      border: 1px solid var(--purple-border);
-      flex-shrink: 0
-    }
-
-    .finding-body {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px
-    }
-
-    .finding-body.full {
-      grid-template-columns: 1fr
-    }
-
-    .finding-section h4 {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--text-muted);
-      margin-bottom: 8px
-    }
-
-    .finding-section p {
-      font-size: 14px;
-      color: var(--text);
-      line-height: 1.6
-    }
-
-    .business-impact-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 8px
-    }
-
-    .impact-entry {
-      display: flex;
-      gap: 8px;
-      font-size: 13px
-    }
-
-    .impact-key {
-      color: var(--text-muted);
-      font-weight: 500;
-      min-width: 190px;
-      flex-shrink: 0
-    }
-
-    .impact-val {
-      color: var(--text)
-    }
-
-    .remediation-block {
-      grid-column: 1/-1;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 8px;
-      padding: 14px 18px
-    }
-
-    .remediation-block h4 {
-      color: var(--low);
-      margin-bottom: 6px
-    }
-
-    .remediation-block p {
-      font-size: 14px;
-      color: #15803d;
-      line-height: 1.6
-    }
-
-    .tech-remediation-block {
-      grid-column: 1/-1;
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
-      border-radius: 8px;
-      padding: 14px 18px;
-      margin-top: -8px
-    }
-
-    .tech-remediation-block h4 {
-      color: #0369a1;
-      margin-bottom: 6px
-    }
-
-    .tech-remediation-block p {
-      font-size: 13px;
-      color: #0c4a6e;
-      line-height: 1.6;
-      font-family: 'Courier New', monospace
-    }
-
-    .threat-scenario-block {
-      grid-column: 1/-1;
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      border-radius: 8px;
-      padding: 14px 18px
-    }
-
-    .threat-scenario-block h4 {
-      color: #c2410c;
-      margin-bottom: 6px
-    }
-
-    .threat-scenario-block p {
-      font-size: 14px;
-      color: #9a3412;
-      line-height: 1.6
-    }
-
-    /* ===== POTENTIAL ATTACK PATH SECTION ===== */
-    .attack-path-card {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 16px;
-      overflow: hidden
-    }
-
-    .attack-path-header {
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 12px
-    }
-
-    .attack-path-header.high {
-      background: var(--high-bg)
-    }
-
-    .attack-path-header.medium {
-      background: var(--medium-bg)
-    }
-
-    .attack-path-chain {
-      padding: 20px 24px;
-      display: flex;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 0
-    }
-
-    .chain-step {
-      display: flex;
-      align-items: center;
-      min-width: 0
-    }
-
-    .chain-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      background: var(--accent-soft);
       padding: 10px 14px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text);
-      max-width: 180px;
-      text-align: center;
-      line-height: 1.4;
-      transition: box-shadow .2s
+      border-radius: 0 3px 3px 0;
+      margin: 12px 0 16px;
+      font-size: 12.5px;
     }
+    .impact-callout .meta-label { color: var(--accent); margin-bottom: 4px; }
 
-    .chain-box:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, .08)
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      margin: 14px 0;
     }
-
-    .chain-step.high .chain-box:first-child {
-      background: var(--high-bg);
-      border-color: var(--high-border);
-      color: var(--high);
-      font-weight: 700
+    .summary-card {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      background: var(--card);
     }
-
-    .chain-step.medium .chain-box:first-child {
-      background: var(--medium-bg);
-      border-color: var(--medium-border);
-      color: var(--medium);
-      font-weight: 700
-    }
-
-    .chain-arrow {
-      font-size: 18px;
-      color: var(--text-muted);
-      padding: 0 8px;
-      flex-shrink: 0
-    }
-
-    .chain-final .chain-box {
-      background: #1e293b;
-      border-color: #1e293b;
-      color: #fff;
-      font-weight: 600
-    }
-
-    .chain-step-num {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--brand-light);
-      color: #fff;
-      font-size: 10px;
+    .summary-card .number {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 22px;
       font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .urgent-list {
+      margin: 10px 0 0;
+      padding-left: 0;
+      list-style: none;
+      counter-reset: urgent;
+    }
+    .urgent-list li {
+      counter-increment: urgent;
+      margin-bottom: 10px;
+      padding-left: 26px;
+      position: relative;
+    }
+    .urgent-list li::before {
+      content: counter(urgent);
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      width: 16px;
+      height: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      margin-bottom: 4px
+    }
+    .urgent-list .impact-line {
+      display: block;
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      margin-top: 2px;
     }
 
-    /* ===== TAG LISTS ===== */
-    .tag-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px
-    }
-
-    .tag {
-      background: var(--medium-bg);
-      border: 1px solid var(--medium-border);
-      color: var(--medium);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 12px;
-      font-family: 'Courier New', monospace;
-      font-weight: 500
-    }
-
-    .tag.tech {
-      background: #f0f9ff;
-      border-color: #bae6fd;
-      color: #0369a1
-    }
-
-    .tag.port {
-      background: var(--high-bg);
-      border-color: var(--high-border);
-      color: var(--high)
-    }
-
-    .tag.dns-a {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-      color: #166534
-    }
-
-    .tag.dns-mx {
-      background: #f5f3ff;
-      border-color: #ddd6fe;
-      color: #5b21b6
-    }
-
-    .tag.dns-txt {
-      background: #fff7ed;
-      border-color: #fed7aa;
-      color: #9a3412
-    }
-
-    .tag.dns-cname {
-      background: #f0f9ff;
-      border-color: #bae6fd;
-      color: #0369a1
-    }
-
-    .tag.ct-host {
-      background: #f8fafc;
-      border-color: #e2e8f0;
-      color: #475569
-    }
-
-    /* ===== APPENDIX TABLES ===== */
-    .appendix-table {
+    table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px
+      font-size: 11.5px;
     }
-
-    .appendix-table th {
-      text-align: left;
-      padding: 10px 12px;
-      background: #f1f5f9;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: var(--text-muted);
-      border-bottom: 2px solid var(--border)
-    }
-
-    .appendix-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 9px;
       vertical-align: top;
-      word-break: break-all
+      text-align: left;
     }
-
-    .appendix-table tr:last-child td {
-      border-bottom: none
-    }
-
-    .appendix-table tr:hover td {
-      background: #f8fafc
-    }
-
-    .status-yes {
-      color: var(--low);
-      font-weight: 600
-    }
-
-    .status-no {
-      color: var(--high);
-      font-weight: 600
-    }
-
-    .port-high {
-      color: var(--high);
-      font-weight: 600
-    }
-
-    .port-medium {
-      color: var(--medium);
-      font-weight: 600
-    }
-
-    .port-low {
-      color: var(--low)
-    }
-
-    .dns-record-section {
-      margin-bottom: 20px
-    }
-
-    .dns-record-section h4 {
-      font-size: 12px;
-      font-weight: 700;
+    th {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 9.5px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px
+      color: var(--ink-faint);
+      border-bottom: 2px solid var(--ink);
     }
-
-    .dns-badge {
-      display: inline-flex;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 10px;
+    .sev {
+      font-family: 'Courier New', Courier, monospace;
       font-weight: 700;
-      text-transform: uppercase
+      font-size: 10.5px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
     }
-
-    .dns-badge.a {
-      background: #f0fdf4;
-      color: #166534;
-      border: 1px solid #bbf7d0
+    .sev.Critical { color: var(--critical); }
+    .sev.High { color: var(--high); }
+    .sev.Medium { color: var(--medium); }
+    .sev.Low { color: var(--low); }
+    .attack-path {
+      font-size: 10.5px;
+      color: var(--ink-faint);
+      margin: 4px 0 0;
     }
-
-    .dns-badge.mx {
-      background: #f5f3ff;
-      color: #5b21b6;
-      border: 1px solid #ddd6fe
+    .chip {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 3px 8px;
+      margin: 0 5px 5px 0;
+      background: var(--card);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10.5px;
     }
-
-    .dns-badge.txt {
-      background: #fff7ed;
-      color: #9a3412;
-      border: 1px solid #fed7aa
-    }
-
-    .dns-badge.cname {
-      background: #f0f9ff;
-      color: #0369a1;
-      border: 1px solid #bae6fd
-    }
-
-    .spf-dmarc-row {
+    .module-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 16px
+      gap: 0;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
     }
-
-    .spf-dmarc-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px
+    .module-card {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      background: var(--card);
     }
-
-    .spf-dmarc-card h5 {
-      font-size: 11px;
+    .comparison-list {
+      margin: 0;
+      padding-left: 16px;
+    }
+    .comparison-list li { margin-bottom: 5px; font-size: 12px; }
+    .closing-line {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--text-muted);
-      margin-bottom: 8px
-    }
-
-    .spf-dmarc-card p {
-      font-size: 12px;
-      font-family: 'Courier New', monospace;
-      color: var(--text);
-      word-break: break-all;
-      line-height: 1.5
-    }
-
-    .spf-dmarc-card.missing p {
-      color: var(--text-muted);
-      font-style: italic;
-      font-family: inherit
-    }
-
-    .spf-dmarc-card.warn {
-      border-color: var(--medium-border);
-      background: var(--medium-bg)
-    }
-
-    /* ===== SECTION LABEL ===== */
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--text-muted);
-      margin: 32px 0 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px
-    }
-
-    .section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border)
-    }
-
-    /* ===== FOOTER ===== */
-    .disclaimer {
-      border-top: 2px solid var(--border);
-      padding: 28px 0 0;
-      margin-top: 16px
-    }
-
-    .disclaimer h3 {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--text-muted);
-      margin-bottom: 10px
-    }
-
-    .disclaimer p {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.7;
-      max-width: 860px
-    }
-
-    .footer-brand {
-      margin-top: 20px;
-      font-size: 12px;
-      color: #94a3b8
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width:768px) {
-      .header-inner {
-        flex-direction: column;
-        gap: 16px
-      }
-
-      .header-meta {
-        text-align: left
-      }
-
-      .container {
-        padding: 20px 16px 48px
-      }
-
-      .score-section {
-        grid-template-columns: 1fr;
-        text-align: center
-      }
-
-      .finding-body {
-        grid-template-columns: 1fr
-      }
-
-      .finding-body .remediation-block,
-      .finding-body .threat-scenario-block,
-      .finding-body .tech-remediation-block {
-        grid-column: 1
-      }
-
-      .top-risks {
-        grid-template-columns: 1fr
-      }
-
-      .attack-path-chain {
-        flex-direction: column;
-        gap: 8px
-      }
-
-      .chain-arrow {
-        transform: rotate(90deg)
-      }
-
-      .scoring-factors {
-        grid-template-columns: 1fr
-      }
-
-      .methodology-thresholds {
-        grid-template-columns: 1fr
-      }
-
-      .spf-dmarc-row {
-        grid-template-columns: 1fr
-      }
-
-      .metadata-grid {
-        grid-template-columns: 1fr
-      }
-    }
-
-    @media print {
-      body {
-        font-size: 12px
-      }
-
-      .container {
-        padding: 16px
-      }
-
-      .card {
-        break-inside: avoid
-      }
-
-      .finding-block {
-        break-inside: avoid
-      }
-
-      .attack-path-card {
-        break-inside: avoid
-      }
+      font-size: 12.5px;
     }
   </style>
 </head>
-
 <body>
+  <div class="footer">SentinelX External Exposure Report — Confidential — {{ domain }}</div>
 
-  <!-- ===== PAGE HEADER ===== -->
-  <header class="page-header">
-    <div class="header-inner">
-      <div class="header-brand">
-        <div class="header-logo">SX</div>
-        <div class="header-title">
-          <h1>SentinelX External Exposure Intelligence Report</h1>
-          <p>Passive Reconnaissance Assessment — Confidential</p>
+  <section class="cover">
+    <div class="cover-top">
+      <div class="cover-top-row">
+        <div class="cover-title">
+          <div class="monogram">{{ domain[0]|upper }}</div>
+          <div class="kicker">External Exposure Report</div>
+          <h1>{{ domain }}</h1>
+          <p>What an unauthenticated outsider can see on the public internet right now, and what to fix first.</p>
         </div>
-      </div>
-      <div class="header-meta">
-        <div class="domain-tag">{{ domain }}</div>
-        <div class="report-date">Generated: {{ report_date }}</div>
+        <div class="risk-badge {{ structured.exposure_level }}">{{ structured.exposure_score }}<span>/ 100 · {{ structured.exposure_level|upper }}</span></div>
       </div>
     </div>
-  </header>
-
-  <main class="container">
-
-    <!-- ===== ASSESSMENT METADATA ===== -->
-    {% if assessment_metadata %}
-    <div class="card">
-      <div class="card-header">
-        <h2>📋 Assessment Metadata</h2>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="metadata-grid">
-          <div class="metadata-row">
-            <div class="metadata-key">Assessment Type</div>
-            <div class="metadata-val">{{ assessment_metadata.get('assessment_type', '—') }}</div>
-          </div>
-          <div class="metadata-row">
-            <div class="metadata-key">Target Scope</div>
-            <div class="metadata-val">{{ assessment_metadata.get('scope', '—') }}</div>
-          </div>
-          <div class="metadata-row">
-            <div class="metadata-key">Timestamp</div>
-            <div class="metadata-val mono">{{ assessment_metadata.get('timestamp', report_date) }}</div>
-          </div>
-          <div class="metadata-row">
-            <div class="metadata-key">Scanner Version</div>
-            <div class="metadata-val mono">SentinelX v{{ assessment_metadata.get('scanner_version', '1.2.0') }}</div>
-          </div>
-          <div class="metadata-row">
-            <div class="metadata-key">Analyst</div>
-            <div class="metadata-val">{{ assessment_metadata.get('analyst_name', 'SentinelX Automated Engine') }}</div>
-          </div>
-          <div class="metadata-row">
-            <div class="metadata-key">Methodology</div>
-            <div class="metadata-val">{{ assessment_metadata.get('methodology', 'Passive external reconnaissance only.')
-              }}</div>
-          </div>
+    <div class="cover-bottom">
+      <div class="cover-meta">
+        <div class="meta-card">
+          <div class="meta-label">Scan Date</div>
+          <div class="meta-value">{{ executive_summary.scan_date }}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Scope</div>
+          <div class="meta-value">{{ structured.assessment_metadata.scope|upper }}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Analyst</div>
+          <div class="meta-value">{{ structured.assessment_metadata.analyst_name }}</div>
         </div>
       </div>
     </div>
-    {% endif %}
+  </section>
 
-    <!-- ===== EXPOSURE SCORE ===== -->
-    <div class="card">
-      <div class="card-header">
-        <h2>Exposure Score</h2>
-        <span style="font-size:12px;color:var(--text-muted)">Composite 1–10 Risk Metric</span>
+  <main class="page">
+    <section class="section" style="border-top:none; padding-top:0;">
+      <div class="kicker">01 · Executive Summary</div>
+      <h2>{{ executive_summary.title }}</h2>
+      <p class="lede">{{ executive_summary.plain_english_summary }}</p>
+
+      <div class="impact-callout">
+        <div class="meta-label">Business Impact If Left Unaddressed</div>
+        {{ executive_summary.top_business_impact }}
       </div>
-      <div class="card-body">
-        <div class="score-section">
-          <div class="score-dial level-{{ exposure_level | lower }}">
-            <div class="score-number">{{ exposure_score }}</div>
-            <div class="score-label">{{ exposure_level }}</div>
-          </div>
-          <div class="score-info">
-            <h3>{{ exposure_level }} Exposure</h3>
-            <p>
-              {% if exposure_level == 'High' %}
-              Significant external exposure identified. Immediate structured remediation is required across multiple
-              attack surface dimensions.
-              {% elif exposure_level == 'Medium' %}
-              Moderate external exposure. Several risk indicators were identified. Structured remediation within 60 days
-              is recommended.
-              {% else %}
-              Low external exposure. Basic hygiene controls appear to be in place. Continued monitoring is recommended.
-              {% endif %}
-            </p>
-            <div class="score-bar-container">
-              <div class="score-bar-track">
-                <div class="score-bar-fill level-{{ exposure_level | lower }}"
-                  style="width:{{ (exposure_score / 10 * 100) | int }}%"></div>
-              </div>
-              <div class="score-bar-label">{{ exposure_score }} / 10</div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Exposure Score Methodology -->
-        {% if exposure_score_methodology %}
-        <div class="methodology-panel">
-          <h4>📐 Exposure Score Methodology</h4>
-          <p>{{ exposure_score_methodology.get('description', '') }}</p>
-          <div class="scoring-factors">
-            {% for factor in exposure_score_methodology.get('scoring_factors', []) %}
-            <div class="scoring-factor">
-              <div class="factor-points">{{ factor.get('points', '') }}</div>
-              <div>
-                <div class="factor-name">{{ factor.get('factor', '') }}</div>
-                <div class="factor-rationale">{{ factor.get('rationale', '') }}</div>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          <div class="methodology-thresholds" style="margin-top:16px">
-            {% for label, desc in exposure_score_methodology.get('thresholds', {}).items() %}
-            {% if 'Low' in label %}
-            <div class="threshold-card low">
-              <div class="threshold-label">{{ label }}</div>
-              <div class="threshold-desc">{{ desc }}</div>
-            </div>
-            {% elif 'Medium' in label %}
-            <div class="threshold-card medium">
-              <div class="threshold-label">{{ label }}</div>
-              <div class="threshold-desc">{{ desc }}</div>
-            </div>
-            {% else %}
-            <div class="threshold-card high">
-              <div class="threshold-label">{{ label }}</div>
-              <div class="threshold-desc">{{ desc }}</div>
-            </div>
-            {% endif %}
-            {% endfor %}
-          </div>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="meta-label">Overall Risk Score</div>
+          <div class="number">{{ executive_summary.overall_risk_score }}/100</div>
         </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- ===== ATTACK SURFACE OVERVIEW ===== -->
-    {% set risk_high = structured.get('risk_preliminary', {}).get('high', []) %}
-    {% set risk_medium = structured.get('risk_preliminary', {}).get('medium', []) %}
-    {% set risk_low = structured.get('risk_preliminary', {}).get('low', []) %}
-    <div class="card">
-      <div class="card-header">
-        <h2>Attack Surface Overview</h2>
-      </div>
-      <div class="card-body">
-        <div class="surface-grid">
-          <div
-            class="surface-stat {{ 'danger' if attack_surface.get('total_subdomains', 0) > 10 else 'warn' if attack_surface.get('total_subdomains', 0) > 5 else 'ok' }}">
-            <div class="surface-stat-value">{{ attack_surface.get('total_subdomains', 0) }}</div>
-            <div class="surface-stat-label">Subdomains Discovered</div>
-          </div>
-          <div class="surface-stat {{ 'danger' if attack_surface.get('sensitive_open_ports') else 'ok' }}">
-            <div class="surface-stat-value">{{ attack_surface.get('sensitive_open_ports', []) | length }}</div>
-            <div class="surface-stat-label">Sensitive Open Ports</div>
-          </div>
-          <div class="surface-stat {{ 'warn' if attack_surface.get('missing_critical_headers') else 'ok' }}">
-            <div class="surface-stat-value">{{ attack_surface.get('missing_critical_headers', []) | length }}</div>
-            <div class="surface-stat-label">Critical Headers Missing</div>
-          </div>
-          <div class="surface-stat {{ 'danger' if attack_surface.get('high_risk_subdomains') else 'ok' }}">
-            <div class="surface-stat-value">{{ attack_surface.get('high_risk_subdomains', []) | length }}</div>
-            <div class="surface-stat-label">High-Risk Subdomains</div>
-          </div>
-          <div class="surface-stat">
-            {% set tls = attack_surface.get('tls_status', 'Unknown') %}
-            <div class="surface-stat-value" style="font-size:16px;margin-top:4px">
-              <span class="tls-badge {{ tls | lower }}">
-                {{ '✓' if tls == 'Valid' else '✗' if tls in ('Expired','Weak') else '?' }} {{ tls }}
-              </span>
-            </div>
-            <div class="surface-stat-label" style="margin-top:8px">TLS Certificate Status</div>
-          </div>
-          <div class="surface-stat">
-            <div class="surface-stat-value">{{ attack_surface.get('tech_stack_summary', []) | length }}</div>
-            <div class="surface-stat-label">Technology Indicators</div>
-          </div>
+        <div class="summary-card">
+          <div class="meta-label">Critical Findings</div>
+          <div class="number">{{ executive_summary.critical_findings }}</div>
         </div>
-
-        {% if attack_surface.get('tech_stack_summary') %}
-        <div class="tag-list" style="margin-top:20px">
-          {% for tech in attack_surface.get('tech_stack_summary', []) %}
-          <span class="tag tech">{{ tech }}</span>
-          {% endfor %}
+        <div class="summary-card">
+          <div class="meta-label">High Findings</div>
+          <div class="number">{{ executive_summary.high_findings }}</div>
         </div>
-        {% endif %}
-
-        {% if attack_surface.get('high_risk_subdomains') %}
-        <div style="margin-top:16px">
-          <div
-            style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
-            High-Risk Pattern Subdomains</div>
-          <div class="tag-list" style="margin-top:0">
-            {% for host in attack_surface.get('high_risk_subdomains', []) %}
-            <span class="tag">{{ host }}</span>
-            {% endfor %}
-          </div>
+        <div class="summary-card">
+          <div class="meta-label">Subdomains Discovered</div>
+          <div class="number">{{ executive_summary.subdomains_discovered }}</div>
         </div>
-        {% endif %}
-
-        <!-- Risk distribution bar -->
-        <div style="margin-top:24px">
-          <div class="risk-dist">
-            <div class="risk-row">
-              <div class="risk-row-label high">High</div>
-              <div class="risk-bar-track">
-                <div class="risk-bar-fill high" style="width:{{ [risk_high|length * 16, 4]|max }}%">{{ risk_high |
-                  length }}</div>
-              </div>
-              <div class="risk-count">{{ risk_high | length }}</div>
-            </div>
-            <div class="risk-row">
-              <div class="risk-row-label medium">Medium</div>
-              <div class="risk-bar-track">
-                <div class="risk-bar-fill medium" style="width:{{ [risk_medium|length * 12, 4]|max }}%">{{ risk_medium |
-                  length }}</div>
-              </div>
-              <div class="risk-count">{{ risk_medium | length }}</div>
-            </div>
-            <div class="risk-row">
-              <div class="risk-row-label low">Low</div>
-              <div class="risk-bar-track">
-                <div class="risk-bar-fill low" style="width:{{ [risk_low|length * 10, 4]|max }}%">{{ risk_low | length
-                  }}</div>
-              </div>
-              <div class="risk-count">{{ risk_low | length }}</div>
-            </div>
-          </div>
+        <div class="summary-card">
+          <div class="meta-label">Open Ports</div>
+          <div class="number">{{ executive_summary.open_ports }}</div>
+        </div>
+        <div class="summary-card">
+          <div class="meta-label">Risk Level</div>
+          <div class="number">{{ executive_summary.overall_risk_level }}</div>
         </div>
       </div>
-    </div>
 
-    <!-- ===== EXECUTIVE SUMMARY ===== -->
-    <div class="card">
-      <div class="card-header">
-        <h2>Executive Summary</h2>
-        <span class="risk-pill {{ overall_risk | lower }}">{{ overall_risk }} Risk</span>
-      </div>
-      <div class="card-body">
-        {% if executive_summary is mapping %}
-        <div class="posture-block">{{ executive_summary.get('OverallPosture', '') }}</div>
-        <div class="top-risks">
-          <div class="top-risk-card">
-            <h4>Primary Risk #1</h4>
-            <p>{{ executive_summary.get('TopRiskOne', '') }}</p>
-          </div>
-          <div class="top-risk-card">
-            <h4>Primary Risk #2</h4>
-            <p>{{ executive_summary.get('TopRiskTwo', '') }}</p>
-          </div>
-        </div>
-        <div class="next-step-block">
-          <div class="next-step-icon">💡</div>
-          <p>{{ executive_summary.get('RecommendedNextStep', '') }}</p>
-        </div>
-        {% if executive_summary.get('PassiveAssessmentStatement') %}
-        <div class="passive-statement">{{ executive_summary.get('PassiveAssessmentStatement') }}</div>
-        {% endif %}
-        {% else %}
-        <div class="posture-block">{{ executive_summary }}</div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- ===== FINDINGS ===== -->
-    {% if findings %}
-    <div class="section-label">Security Findings</div>
-    {% for finding in findings %}
-    {% set risk = finding.get('RiskCategory', 'Low') | lower %}
-    <div class="finding-block">
-      <div class="finding-header {{ risk }}">
-        <div class="finding-header-left">
-          <div class="finding-title">{{ loop.index }}. {{ finding.get('Issue', 'Finding') }}</div>
-        </div>
-        <div class="finding-meta">
-          {% if finding.get('OWASPCategory') %}
-          <span class="owasp-pill" title="OWASP Top 10 2021">{{ finding.get('OWASPCategory') }}</span>
-          {% endif %}
-          <span class="risk-pill {{ risk }}">{{ finding.get('RiskCategory', 'Low') }}</span>
-        </div>
-      </div>
-      <div class="finding-body">
-        <div class="finding-section">
-          <h4>Technical Description</h4>
-          <p>{{ finding.get('TechnicalDescription', '—') }}</p>
-        </div>
-        <div class="finding-section">
-          <h4>Security Impact</h4>
-          <p>{{ finding.get('SecurityImpact', '—') }}</p>
-        </div>
-        <div class="finding-section" style="grid-column:1/-1">
-          <h4>Business Impact</h4>
-          <div class="business-impact-grid">
-            {% set bi = finding.get('BusinessImpact', {}) %}
-            {% for key, val in bi.items() %}
-            <div class="impact-entry">
-              <div class="impact-key">{{ key | replace('Risk', ' Risk') | replace('Credential', 'Credential ') |
-                replace('Infrastructure', 'Infrastructure ') }}</div>
-              <div class="impact-val">{{ val }}</div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% if finding.get('LikelyThreatScenario') %}
-        <div class="threat-scenario-block">
-          <h4>🎯 Threat Scenario</h4>
-          <p>{{ finding.get('LikelyThreatScenario') }}</p>
-        </div>
-        {% endif %}
-        {% if finding.get('RemediationRecommendation') %}
-        <div class="remediation-block">
-          <h4>✅ Remediation Recommendation</h4>
-          <p>{{ finding.get('RemediationRecommendation') }}</p>
-        </div>
-        {% endif %}
-        {% if finding.get('TechStackRemediation') and finding.get('TechStackRemediation') != 'Apply remediation
-        according to your web server and framework documentation.' %}
-        <div class="tech-remediation-block">
-          <h4>🔧 Technology-Specific Implementation</h4>
-          <p>{{ finding.get('TechStackRemediation') }}</p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- ===== POTENTIAL ATTACK PATHS ===== -->
-    {% if attack_paths %}
-    <div class="section-label">Potential Attack Paths</div>
-    <div class="card">
-      <div class="card-header">
-        <h2>🔗 Potential Attack Paths</h2>
-        <span style="font-size:12px;color:var(--text-muted)">How findings chain into business impact</span>
-      </div>
-      <div class="card-body" style="padding:16px">
-        {% for ap in attack_paths %}
-        <div class="attack-path-card">
-          <div class="attack-path-header {{ ap.risk }}">
-            <span class="risk-pill {{ ap.risk }}">{{ ap.risk | upper }}</span>
-            <span style="font-size:13px;font-weight:600;color:var(--text)">{{ ap.issue }}</span>
-          </div>
-          <div class="attack-path-chain">
-            {% for step in ap.steps %}
-            {% set is_last = loop.last %}
-            {% set is_first = loop.first %}
-            <div class="chain-step {{ ap.risk if is_first else '' }} {{ 'chain-final' if is_last else '' }}">
-              <div class="chain-box">
-                <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">STEP {{ loop.index
-                  }}</div>
-                {{ step }}
-              </div>
-            </div>
-            {% if not is_last %}
-            <div class="chain-arrow">→</div>
-            {% endif %}
-            {% endfor %}
-          </div>
-        </div>
+      <h3>Top {{ executive_summary.top_urgent_findings|length }} Most Urgent Findings</h3>
+      <ol class="urgent-list">
+        {% for item in executive_summary.top_urgent_findings %}
+        <li><strong>{{ item.finding }}</strong>: {{ item.fix }}<span class="impact-line">Impact: {{ item.business_impact }}</span></li>
         {% endfor %}
-      </div>
-    </div>
-    {% endif %}
+      </ol>
+      <div class="closing-line">{{ executive_summary.closing_line }}</div>
+    </section>
 
-    <!-- ===== TECHNICAL APPENDIX ===== -->
-    <div class="section-label">Technical Appendix</div>
-
-    <!-- SSL/TLS Details -->
-    <div class="card">
-      <div class="card-header">
-        <h2>A.1 — TLS Certificate Details</h2>
-      </div>
-      <div class="card-body">
-        <table class="appendix-table">
-          <thead>
-            <tr>
-              <th>Attribute</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Reachable</td>
-              <td class="{{ 'status-yes' if appendix_ssl.reachable == 'Yes' else 'status-no' }}">{{
-                appendix_ssl.reachable }}</td>
-            </tr>
-            <tr>
-              <td>Subject (CN)</td>
-              <td>{{ appendix_ssl.subject }}</td>
-            </tr>
-            <tr>
-              <td>Issuer (CA)</td>
-              <td>{{ appendix_ssl.issuer }}</td>
-            </tr>
-            <tr>
-              <td>Valid From</td>
-              <td>{{ appendix_ssl.valid_from }}</td>
-            </tr>
-            <tr>
-              <td>Valid To</td>
-              <td>{{ appendix_ssl.valid_to }}</td>
-            </tr>
-            <tr>
-              <td>Days Remaining</td>
-              <td class="{{ 'status-no' if appendix_ssl.expired == 'Yes' else '' }}">{{ appendix_ssl.days_remaining }}
-              </td>
-            </tr>
-            <tr>
-              <td>TLS Version</td>
-              <td>{{ appendix_ssl.tls_version }}</td>
-            </tr>
-            <tr>
-              <td>Cipher Suite</td>
-              <td style="font-family:'Courier New',monospace;font-size:12px">{{ appendix_ssl.cipher }}</td>
-            </tr>
-            <tr>
-              <td>Certificate Expired</td>
-              <td class="{{ 'status-no' if appendix_ssl.expired == 'Yes' else 'status-yes' }}">{{ appendix_ssl.expired
-                }}</td>
-            </tr>
-            {% if appendix_ssl.error %}<tr>
-              <td>Error</td>
-              <td style="color:var(--high)">{{ appendix_ssl.error }}</td>
-            </tr>{% endif %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Security Headers -->
-    <div class="card">
-      <div class="card-header">
-        <h2>A.2 — Security Header Analysis</h2>
-      </div>
-      <div class="card-body">
-        <table class="appendix-table">
-          <thead>
-            <tr>
-              <th>Header</th>
-              <th>Present</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in appendix_headers %}
-            <tr>
-              <td style="font-family:'Courier New',monospace;font-size:12px">{{ row.name }}</td>
-              <td class="{{ 'status-yes' if row.present == 'Yes' else 'status-no' }}">{{ row.present }}</td>
-              <td style="font-size:12px;color:var(--text-muted)">{{ row.value }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Open Ports -->
-    {% if appendix_ports %}
-    <div class="card">
-      <div class="card-header">
-        <h2>A.3 — Open Port Enumeration</h2>
-      </div>
-      <div class="card-body">
-        <table class="appendix-table">
-          <thead>
-            <tr>
-              <th>Port</th>
-              <th>Service</th>
-              <th>Exposure Classification</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in appendix_ports %}
-            <tr>
-              <td style="font-family:'Courier New',monospace">{{ row.port }}</td>
-              <td>{{ row.service }}</td>
-              <td
-                class="{{ 'port-high' if row.classification == 'High Exposure' else 'port-medium' if row.classification == 'Non-Standard' else 'port-low' }}">
-                {{ row.classification }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Subdomains -->
-    <div class="card">
-      <div class="card-header">
-        <h2>A.4 — Subdomain Enumeration</h2>
-        <span style="font-size:12px;color:var(--text-muted)">{{ appendix_subdomains | length }} host(s) resolved</span>
-      </div>
-      <div class="card-body">
-        <div class="tag-list">
-          {% for host in appendix_subdomains %}
-          <span class="tag {{ 'port' if is_high_risk(host) else '' }}">{{ host }}</span>
+    <section class="section">
+      <div class="kicker">02 · Findings Table</div>
+      <h2>All Findings</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Finding</th>
+            <th>Module</th>
+            <th>Business Impact</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in findings_table %}
+          <tr>
+            <td class="sev {{ row.severity }}">{{ row.severity }}</td>
+            <td>{{ row.finding }}</td>
+            <td>{{ row.module }}</td>
+            <td>{{ row.business_impact }}</td>
+            <td>{{ row.recommendation }}</td>
+          </tr>
           {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <div class="kicker">03 · Baseline Comparison</div>
+      <h2>What Changed Since The Last Scan</h2>
+      {% if comparison_report.status == 'compared' %}
+      <div class="module-grid">
+        <div class="module-card">
+          <h3 style="margin-top:0">New Subdomains</h3>
+          {% if comparison_report.new_subdomains %}
+            {% for host in comparison_report.new_subdomains %}<span class="chip">{{ host }}</span>{% endfor %}
+          {% else %}<p>None.</p>{% endif %}
+        </div>
+        <div class="module-card">
+          <h3 style="margin-top:0">New Open Ports</h3>
+          {% if comparison_report.new_open_ports %}
+            {% for port in comparison_report.new_open_ports %}<span class="chip">{{ port }}</span>{% endfor %}
+          {% else %}<p>None.</p>{% endif %}
         </div>
       </div>
-    </div>
+      <h3>Changed Headers</h3>
+      {% if comparison_report.changed_headers %}
+      <ul class="comparison-list">
+        {% for item in comparison_report.changed_headers %}
+        <li>{{ item.header }}: {{ item.before }} → {{ item.after }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p>No header state changes recorded.</p>{% endif %}
+      {% elif comparison_report.status == 'baseline_created' %}
+      <p>This is the first baseline scan for this domain. Future runs with <code>--compare last</code> will show what changed.</p>
+      {% else %}
+      <p>Baseline comparison was not requested for this run.</p>
+      {% endif %}
+    </section>
 
-    <!-- DNS Records -->
-    <div class="card">
-      <div class="card-header">
-        <h2>A.5 — DNS Reconnaissance</h2>
-      </div>
-      <div class="card-body">
-        {% if appendix_dns.error and not appendix_dns.a_records and not appendix_dns.mx_records %}
-        <p style="color:var(--text-muted);font-style:italic">DNS reconnaissance returned no results: {{
-          appendix_dns.error }}</p>
-        {% else %}
-
-        <!-- A Records -->
-        {% if appendix_dns.a_records %}
-        <div class="dns-record-section">
-          <h4><span class="dns-badge a">A</span> IPv4 Address Records</h4>
-          <div class="tag-list" style="margin-top:0">
-            {% for record in appendix_dns.a_records %}
-            <span class="tag dns-a" style="font-family:'Courier New',monospace">{{ record }}</span>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- MX Records -->
-        {% if appendix_dns.mx_records %}
-        <div class="dns-record-section">
-          <h4><span class="dns-badge mx">MX</span> Mail Exchange Records</h4>
-          <div class="tag-list" style="margin-top:0">
-            {% for record in appendix_dns.mx_records %}
-            <span class="tag dns-mx">{{ record }}</span>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- CNAME Records -->
-        {% if appendix_dns.cname_records %}
-        <div class="dns-record-section">
-          <h4><span class="dns-badge cname">CNAME</span> Canonical Name Records</h4>
-          <div class="tag-list" style="margin-top:0">
-            {% for record in appendix_dns.cname_records %}
-            <span class="tag dns-cname">{{ record }}</span>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- TXT Records -->
-        {% if appendix_dns.txt_records %}
-        <div class="dns-record-section">
-          <h4><span class="dns-badge txt">TXT</span> Text Records</h4>
-          <table class="appendix-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Record Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for record in appendix_dns.txt_records %}
-              <tr>
-                <td style="color:var(--text-muted);font-size:12px">{{ loop.index }}</td>
-                <td style="font-family:'Courier New',monospace;font-size:11px;word-break:break-all">{{ record }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% endif %}
-
-        <!-- SPF / DMARC cards -->
-        <div class="spf-dmarc-row">
-          <div class="spf-dmarc-card {{ '' if appendix_dns.spf_record else 'warn missing' }}">
-            <h5>SPF Record</h5>
-            {% if appendix_dns.spf_record %}
-            <p>{{ appendix_dns.spf_record }}</p>
-            {% else %}
-            <p style="font-family:inherit;font-style:italic;color:var(--text-muted)">Not found — domain may be
-              vulnerable to email spoofing without SPF enforcement.</p>
-            {% endif %}
-          </div>
-          <div class="spf-dmarc-card {{ '' if appendix_dns.dmarc_record else 'warn missing' }}">
-            <h5>DMARC Record</h5>
-            {% if appendix_dns.dmarc_record %}
-            <p>{{ appendix_dns.dmarc_record }}</p>
-            {% else %}
-            <p style="font-family:inherit;font-style:italic;color:var(--text-muted)">Not found — without DMARC, phishing
-              emails spoofing this domain may not be rejected.</p>
-            {% endif %}
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Certificate Transparency -->
-    <div class="card">
-      <div class="card-header">
-        <h2>A.6 — Certificate Transparency (crt.sh)</h2>
-        <span style="font-size:12px;color:var(--text-muted)">{{ all_ct_subdomains | length }} host(s) via CT logs</span>
-      </div>
-      <div class="card-body">
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
-          The following subdomains were discovered passively via certificate transparency log queries (crt.sh).
-          CT logs record all issued certificates, revealing historical and current subdomain infrastructure.
-        </p>
-        <div class="tag-list">
-          {% for host in all_ct_subdomains %}
-          <span class="tag ct-host {{ 'port' if is_high_risk(host) else '' }}">{{ host }}</span>
+    {% for module in module_sections %}
+    <section class="section">
+      <div class="kicker">{{ "%02d"|format(loop.index + 3) }} · {{ module.title }}</div>
+      <h2>{{ module.title }}</h2>
+      <p class="lede">{{ module.summary }}</p>
+      {% if module.findings %}
+      <table>
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Finding</th>
+            <th>Evidence</th>
+            <th>Business Impact</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for finding in module.findings %}
+          <tr>
+            <td class="sev {{ finding.severity }}">{{ finding.severity }}</td>
+            <td>{{ finding.title }}</td>
+            <td>{{ finding.evidence }}</td>
+            <td>{{ finding.business_impact }}</td>
+            <td>
+              {{ finding.remediation }}
+              <div class="attack-path">Likely path: {{ finding.attack_path|join(' → ') }}</div>
+            </td>
+          </tr>
           {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No findings were raised in this module for the current scope.</p>
+      {% endif %}
+
+      {% if module.module == 'headers' and module.details.headers %}
+      <h3>Header | Status | Value | Recommendation</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Header</th>
+            <th>Status</th>
+            <th>Value</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in module.details.headers %}
+          <tr>
+            <td>{{ row.display_name }}</td>
+            <td class="sev {{ 'High' if row.status == 'FAIL' else 'Medium' if row.status == 'WARN' else 'Low' }}">{{ row.status }}</td>
+            <td>{{ row.value if row.value else '-' }}</td>
+            <td>{{ row.recommendation }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
+      {% if module.module == 'subdomains' and module.details.subdomains %}
+      <h3>Discovered Hosts</h3>
+      {% for host in module.details.subdomains %}<span class="chip">{{ host }}</span>{% endfor %}
+      {% endif %}
+
+      {% if module.module == 'ports' and module.details.ports %}
+      <h3>Reachable Ports</h3>
+      {% for port in module.details.ports %}<span class="chip">{{ port }}</span>{% endfor %}
+      {% endif %}
+    </section>
+    {% endfor %}
+
+    <section class="section">
+      <div class="kicker">10 · Technical Appendix</div>
+      <h2>Technical Appendix</h2>
+      <div class="module-grid">
+        <div class="module-card">
+          <h3 style="margin-top:0">TLS Snapshot</h3>
+          <p>Reachable: {{ ssl_appendix.reachable }}</p>
+          <p>Subject: {{ ssl_appendix.subject }}</p>
+          <p>Issuer: {{ ssl_appendix.issuer }}</p>
+          <p>Valid To: {{ ssl_appendix.valid_to }}</p>
+          <p>TLS Version: {{ ssl_appendix.tls_version }}</p>
+        </div>
+        <div class="module-card">
+          <h3 style="margin-top:0">DNS Snapshot</h3>
+          <p>SPF: {{ structured.dns.spf_record if structured.dns.spf_record else 'Not found' }}</p>
+          <p>DMARC: {{ structured.dns.dmarc_record if structured.dns.dmarc_record else 'Not found' }}</p>
+          <p>A Records: {{ structured.dns.a_records|join(', ') if structured.dns.a_records else 'None' }}</p>
+          <p>MX Records: {{ structured.dns.mx_records|join(', ') if structured.dns.mx_records else 'None' }}</p>
         </div>
       </div>
-    </div>
-
-    <!-- ===== FOOTER DISCLAIMER ===== -->
-    <div class="disclaimer">
-      <h3>Disclaimer &amp; Limitations</h3>
-      <p>
-        This report was generated by SentinelX v{{ assessment_metadata.get('scanner_version', '1.2.0') }} using
-        exclusively passive, non-intrusive reconnaissance techniques.
-        All data was collected from publicly observable sources including certificate transparency logs, public DNS
-        records,
-        HTTP response headers, and TCP port availability. No exploitation, credential testing, or authenticated access
-        was performed.
-        Findings represent risk indicators observable from the public internet and do not constitute a complete security
-        assessment.
-        A full penetration test by qualified security professionals is recommended to validate and prioritise these
-        findings.
-      </p>
-      <div class="footer-brand">SentinelX External Exposure Intelligence Engine — Confidential Report — {{ report_date
-        }}</div>
-    </div>
-
+      {% if ports_appendix %}
+      <h3>Port Inventory</h3>
+      {% for row in ports_appendix %}<span class="chip">{{ row.port }} / {{ row.service }}</span>{% endfor %}
+      {% endif %}
+    </section>
   </main>
 </body>
-
 </html>

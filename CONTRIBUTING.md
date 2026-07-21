@@ -1,6 +1,6 @@
 # Contributing to SentinelX
 
-Thanks for your interest in improving SentinelX.
+Thanks for contributing to SentinelX.
 
 ## Development setup
 
@@ -14,47 +14,36 @@ pip install -r requirements.txt
 
 ## Branching
 
-- Create a focused feature/fix branch from the default branch.
-- Keep pull requests small and scoped to one concern when possible.
+- Create a focused branch per change.
+- Keep pull requests scoped and reviewable.
 
 ## Coding guidelines
 
-- Follow existing module boundaries (`recon`, `web`, `attacks`, `risk`, `reporting`, etc.).
-- Prefer readable, composable functions over monolithic logic.
-- Keep new checks non-destructive and safe by default.
-- Reuse shared helpers/utilities before introducing duplicates.
-- Preserve output schema consistency for findings to avoid breaking scoring/reporting.
+- Preserve current module boundaries (`core/`, `reporting/`, `templates/`).
+- Keep scanners resilient: one collector failure must not crash the pipeline.
+- Keep finding schema stable in `reporting/formatter.py`.
+- Avoid introducing intrusive checks unless explicitly approved by project owners.
 
-## Testing and validation
+## Validation before PR
 
-Before opening a PR, run the checks you can in your environment:
+Run:
 
 ```bash
 python -m compileall .
+python main.py example.com --i-have-authorization
+python main.py -d example.com --no-pdf --output-dir ./test_output --i-have-authorization
 ```
 
-Also run a quick scan against an authorized/local target where possible:
-
-```bash
-python main.py -d example.com
-```
+`--i-have-authorization` skips the interactive authorization prompt so these
+commands run unattended; only use it against domains you're actually cleared
+to scan (see `LEGAL.md`).
 
 ## Commit messages
 
-- Use clear, imperative commit messages.
-- Example: `docs: add contributor guide and refresh project README`
-
-## Pull requests
-
-Include:
-
-- What changed
-- Why it changed
-- Any validation commands run
-- Follow-up work or known limitations (if relevant)
+- Use clear imperative subject lines.
+- Example: `refactor: isolate scanner collectors and add data quality reporting`
 
 ## Security and legal expectations
 
-SentinelX is for authorized testing and education.
-
-Do not submit code that enables destructive exploitation or unsafe defaults.
+SentinelX is for authorized assessment only.  
+Do not add destructive or unauthorized testing behavior.
