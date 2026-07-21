@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from pathlib import Path
 from typing import Any
 
@@ -346,25 +347,44 @@ def _risk_buckets(findings: list[dict[str, Any]]) -> dict[str, list[dict[str, An
     return buckets
 
 
-def _compute_exposure_score(scan_data: dict[str, Any], findings: list[dict[str, Any]]) -> tuple[int, str]:
-    severity_weights = {"Critical": 22, "High": 14, "Medium": 8, "Low": 3}
-    score = sum(severity_weights.get(str(item.get("severity")), 0) for item in findings)
+def _compute_exposure_score(
+    scan_data: dict[str, Any],
+    severity_counts: dict[str, int],
+) -> tuple[int, str]:
+    """Score exposure from severity mix, with diminishing returns per tier.
 
-    if len(scan_data.get("subdomains", [])) >= 10:
-        score += 6
+    A straight linear sum lets a pile of low-severity findings (e.g. nine
+    missing headers, all Medium) out-rank the presence of a single real
+    Critical, and can blow past 100 on volume alone. Square-root dampening
+    per tier means the 4th Medium finding adds much less than the 1st, so
+    volume can't manufacture a false Critical. The severity *label* is then
+    floored by the worst confirmed finding, not by the numeric score, so the
+    two never contradict each other in the report.
+    """
+    critical = severity_counts.get("Critical", 0)
+    high = severity_counts.get("High", 0)
+    medium = severity_counts.get("Medium", 0)
+    low = severity_counts.get("Low", 0)
+
+    base = 26 * math.sqrt(critical) + 16 * math.sqrt(high) + 7 * math.sqrt(medium) + 2.5 * math.sqrt(low)
+
+    context_bonus = 0.0
+    if len(scan_data.get("subdomains", [])) >= 15:
+        context_bonus += 3
     if len(scan_data.get("ports", [])) >= 3:
-        score += 8
+        context_bonus += 5
     if scan_data.get("dns", {}).get("dmarc_analysis", {}).get("status") == "missing":
-        score += 8
+        context_bonus += 5
     if scan_data.get("dns", {}).get("spf_analysis", {}).get("status") in {"missing", "neutral"}:
-        score += 8
+        context_bonus += 5
 
-    score = min(score, 100)
-    if score >= 75:
+    score = min(round(base + context_bonus), 100)
+
+    if critical >= 1:
         level = "Critical"
-    elif score >= 50:
+    elif high >= 2 or (high >= 1 and score >= 45):
         level = "High"
-    elif score >= 25:
+    elif high >= 1 or medium >= 1 or score >= 20:
         level = "Medium"
     else:
         level = "Low"
@@ -400,7 +420,7 @@ def _build_module_sections(scan_data: dict[str, Any], findings: list[dict[str, A
 
     headers_rows = scan_data.get("headers", {}).get("headers", [])
     dns_data = scan_data.get("dns", {})
-    return [
+    sections = [
         {
             "module": "dns",
             "title": "DNS and Email Authentication",
@@ -449,6 +469,20 @@ def _build_module_sections(scan_data: dict[str, Any], findings: list[dict[str, A
             "details": {"takeover_findings": scan_data.get("takeover_findings", [])},
         },
     ]
+
+    for module in sections:
+        module_key = str(module["module"])
+        module["business_impact"] = BUSINESS_IMPACT_MAP.get(module_key, BUSINESS_IMPACT_MAP["general"])
+        module["attack_path"] = ATTACK_PATH_MAP.get(module_key, ATTACK_PATH_MAP["general"])
+        # Findings already carry per-finding business_impact/attack_path for JSON/API
+        # consumers, but within one module section they're identical for every row —
+        # repeating that paragraph N times reads like a stuck tape. Show it once via
+        # the module-level fields above instead.
+        module["has_detail"] = bool(module["findings"]) or any(module["details"].values())
+
+    # DNS/SSL/Subdomains/Ports sections with zero findings and zero raw detail are
+    # pure "nothing to see here" filler — drop them instead of padding the report.
+    return [module for module in sections if module["has_detail"]]
 
 
 def _plain_english_summary(
@@ -543,9 +577,9 @@ def build_structured_output(scan_data: dict[str, Any]) -> dict[str, Any]:
     """Build normalized structured output for downstream reporting."""
     findings = _build_findings(scan_data)
     data_quality = scan_data.get("data_quality", {})
-    exposure_score, exposure_level = _compute_exposure_score(scan_data, findings)
-    risk_preliminary = _risk_buckets(findings)
     severity_counts = _severity_counts(findings)
+    exposure_score, exposure_level = _compute_exposure_score(scan_data, severity_counts)
+    risk_preliminary = _risk_buckets(findings)
 
     return {
         "domain": scan_data.get("domain", "unknown"),
@@ -584,7 +618,6 @@ def build_structured_output(scan_data: dict[str, Any]) -> dict[str, Any]:
                 "severity": item["severity"],
                 "finding": item["title"],
                 "module": item["module"],
-                "business_impact": item["business_impact"],
                 "recommendation": item["remediation"],
             }
             for item in findings

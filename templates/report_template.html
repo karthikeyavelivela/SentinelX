@@ -418,7 +418,6 @@
             <th>Severity</th>
             <th>Finding</th>
             <th>Module</th>
-            <th>Business Impact</th>
             <th>Recommendation</th>
           </tr>
         </thead>
@@ -428,7 +427,6 @@
             <td class="sev {{ row.severity }}">{{ row.severity }}</td>
             <td>{{ row.finding }}</td>
             <td>{{ row.module }}</td>
-            <td>{{ row.business_impact }}</td>
             <td>{{ row.recommendation }}</td>
           </tr>
           {% endfor %}
@@ -475,13 +473,17 @@
       <h2>{{ module.title }}</h2>
       <p class="lede">{{ module.summary }}</p>
       {% if module.findings %}
+      <div class="impact-callout">
+        <div class="meta-label">Business Impact — {{ module.title }}</div>
+        {{ module.business_impact }}
+        <div class="attack-path">Likely path: {{ module.attack_path|join(' → ') }}</div>
+      </div>
       <table>
         <thead>
           <tr>
             <th>Severity</th>
             <th>Finding</th>
             <th>Evidence</th>
-            <th>Business Impact</th>
             <th>Recommendation</th>
           </tr>
         </thead>
@@ -491,11 +493,7 @@
             <td class="sev {{ finding.severity }}">{{ finding.severity }}</td>
             <td>{{ finding.title }}</td>
             <td>{{ finding.evidence }}</td>
-            <td>{{ finding.business_impact }}</td>
-            <td>
-              {{ finding.remediation }}
-              <div class="attack-path">Likely path: {{ finding.attack_path|join(' → ') }}</div>
-            </td>
+            <td>{{ finding.remediation }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -540,8 +538,40 @@
     </section>
     {% endfor %}
 
+    {% if tech_appendix.detected or tech_appendix.favicon_technology %}
     <section class="section">
-      <div class="kicker">10 · Technical Appendix</div>
+      <div class="kicker">{{ "%02d"|format(module_sections|length + 4) }} · Technology Fingerprint</div>
+      <h2>What The Site Is Built On</h2>
+      <p class="lede">Passive signature matches from response headers, page markup, and favicon hashing — useful for scoping what's actually running before a follow-up engagement.</p>
+      {% if tech_appendix.favicon_technology %}
+      <div class="impact-callout">
+        <div class="meta-label">Favicon Match</div>
+        {{ tech_appendix.favicon_technology }} <span class="attack-path">(hash {{ tech_appendix.favicon_hash }})</span>
+      </div>
+      {% endif %}
+      {% if tech_appendix.detected %}
+      <table>
+        <thead>
+          <tr>
+            <th>Technology</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in tech_appendix.detected %}
+          <tr>
+            <td>{{ item.name }}</td>
+            <td class="sev {{ 'High' if item.confidence == 'high' else 'Medium' if item.confidence == 'medium' else 'Low' }}">{{ item.confidence|upper }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="section">
+      <div class="kicker">{{ "%02d"|format(module_sections|length + 5) }} · Technical Appendix</div>
       <h2>Technical Appendix</h2>
       <div class="module-grid">
         <div class="module-card">

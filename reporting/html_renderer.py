@@ -37,6 +37,24 @@ def _build_port_appendix(open_ports: list[int]) -> list[dict[str, str]]:
     return rows
 
 
+def _build_tech_appendix(techstack: list[dict[str, Any]], favicon: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "detected": sorted(
+            (
+                {
+                    "name": str(item.get("name", "Unknown")),
+                    "confidence": str(item.get("confidence", "low")),
+                }
+                for item in techstack
+                if isinstance(item, dict)
+            ),
+            key=lambda item: ({"high": 0, "medium": 1, "low": 2}.get(item["confidence"], 3), item["name"]),
+        ),
+        "favicon_technology": favicon.get("technology"),
+        "favicon_hash": favicon.get("hash"),
+    }
+
+
 def _build_ssl_appendix(ssl_summary: dict[str, Any]) -> dict[str, str]:
     def extract_cn(field: Any) -> str:
         if not field:
@@ -97,6 +115,7 @@ def render_html_report(
         comparison_report=structured_data.get("comparison_report", {}),
         ports_appendix=_build_port_appendix(structured_data.get("ports", [])),
         ssl_appendix=_build_ssl_appendix(structured_data.get("ssl", {})),
+        tech_appendix=_build_tech_appendix(structured_data.get("techstack", []), structured_data.get("favicon", {})),
         ai_data=ai_data or {},
     )
 
